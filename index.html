@@ -1,213 +1,149 @@
 <!-- Chosen Palette: Calm Neutrals (Tailwind Slate) with Indigo (Income) and Red (Expense) accents. -->
-<!-- File này được tối ưu hóa để chạy HOÀN TOÀN CỤC BỘ (LocalStorage) -->
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản Lý Thu Chi Cá Nhân (Local Cache)</title>
+    <title>Quản Lý Thu Chi Cá Nhân</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f1f5f9; /* Tailwind Slate 100 */
+            background-color: #f1f5f9;
         }
         .metric-card {
             background-color: white;
             border-radius: 0.75rem;
-            padding: 1.5rem;
+            padding: 1.25rem; 
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
             transition: transform 0.2s;
         }
-        .metric-card:hover {
-            transform: translateY(-2px);
-        }
-        .tx-line {
-            display: flex;
-            align-items: center;
-            padding: 0.5rem 0;
-            border-bottom: 1px dashed #e2e8f0; /* Slate 200 */
-        }
-        .tx-line:last-child {
-            border-bottom: none;
-        }
-
+        .metric-card:hover { transform: translateY(-2px); }
         .delete-btn {
-            background-color: #fee2e2; /* Red 100 */
-            color: #b91c1c; /* Red 700 */
-            border: none;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            line-height: 24px;
-            font-weight: 700;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-align: center;
-            margin-left: 0.5rem;
-            flex-shrink: 0; 
+            background-color: #fee2e2; color: #b91c1c; border: none; border-radius: 0.5rem; 
+            width: 32px; height: 32px; line-height: 32px; font-weight: 700; font-size: 12px;
+            cursor: pointer; transition: all 0.2s; text-align: center; display: flex; align-items: center; justify-content: center;
         }
-        .delete-btn:hover {
-            background-color: #fecaca; /* Red 200 */
-            color: #991b1b; /* Red 800 */
-        }
-        
-        .chart-container {
-            position: relative;
-            width: 100%;
-            max-width: 600px;
-            min-height: 400px; 
-            margin-left: auto;
-            margin-right: auto;
-            flex-grow: 1; 
-        }
+        .delete-btn:hover { background-color: #fecaca; color: #991b1b; }
+        .chart-container { position: relative; width: 100%; height: 300px; margin: auto; }
+        @media (min-width: 768px) { .chart-container { height: 400px; } }
     </style>
 </head>
-<body class="p-4 md:p-8">
+<body class="p-3 md:p-8">
     <div class="max-w-6xl mx-auto">
-        <header class="text-center mb-8">
-            <h1 class="text-3xl md:text-4xl font-bold text-slate-800">Quản Lý Thu Chi (Local Storage)</h1>
+        <header class="text-center mb-6 md:mb-8">
+            <h1 class="text-2xl md:text-4xl font-bold text-slate-800">Quản Lý Thu Chi</h1>
         </header>
 
         <!-- Metrics -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="metric-card">
-                <h2 class="text-sm font-medium text-slate-500 uppercase">Số Dư Hiện Tại</h2>
-                <p id="balanceDisplay" class="text-3xl font-bold text-slate-900 mt-2">0 ₫</p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
+            <div class="metric-card flex flex-row md:flex-col justify-between items-center md:items-start">
+                <h2 class="text-xs md:text-sm font-medium text-slate-500 uppercase">Số Dư Hiện Tại</h2>
+                <p id="balanceDisplay" class="text-2xl md:text-3xl font-bold text-slate-900 mt-0 md:mt-2">0 ₫</p>
             </div>
-            <div class="metric-card">
-                <h2 class="text-sm font-medium text-slate-500 uppercase">Tổng Thu</h2>
-                <p id="incomeDisplay" class="text-3xl font-bold text-emerald-600 mt-2">0 ₫</p>
+            <div class="metric-card flex flex-row md:flex-col justify-between items-center md:items-start">
+                <h2 class="text-xs md:text-sm font-medium text-slate-500 uppercase">Tổng Thu</h2>
+                <p id="incomeDisplay" class="text-2xl md:text-3xl font-bold text-emerald-600 mt-0 md:mt-2">0 ₫</p>
             </div>
-            <div class="metric-card">
-                <h2 class="text-sm font-medium text-slate-500 uppercase">Tổng Chi</h2>
-                <p id="expenseDisplay" class="text-3xl font-bold text-red-600 mt-2">0 ₫</p>
+            <div class="metric-card flex flex-row md:flex-col justify-between items-center md:items-start">
+                <h2 class="text-xs md:text-sm font-medium text-slate-500 uppercase">Chi Tháng Này</h2>
+                <p id="expenseDisplay" class="text-2xl md:text-3xl font-bold text-red-600 mt-0 md:mt-2">0 ₫</p>
             </div>
         </div>
 
-        <!-- LAYOUT FIX: Bố cục 2 cột cho Form và Phân tích (Bằng nhau) -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <!-- Cột 1: Thêm Giao Dịch Mới -->
-            <div class="bg-white p-6 rounded-lg shadow-lg flex flex-col">
-                <h2 class="text-2xl font-bold text-slate-800 mb-4">Thêm Giao Dịch Mới</h2>
-                <p id="cloudStatusText" class="text-emerald-600 font-medium mb-6">Đang chạy chế độ LƯU TRỮ CỤC BỘ (Offline).</p>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 mb-6 md:mb-8">
+            <!-- Form -->
+            <div class="bg-white p-5 rounded-lg shadow-lg flex flex-col order-2 lg:order-1">
+                <h2 class="text-xl md:text-2xl font-bold text-slate-800 mb-4">Thêm Giao Dịch Mới</h2>
                 <form id="transactionForm" class="flex flex-col flex-grow">
-                    <!-- 1. LOẠI (TYPE) -->
                     <fieldset class="mb-4" id="typeSelector">
-                        <legend class="block text-sm font-medium text-slate-700 mb-2">Loại</legend>
-                        <div class="flex items-center gap-6">
-                            <label class="flex items-center">
-                                <input type="radio" name="type" value="income" class="h-4 w-4 text-emerald-600 border-gray-300 focus:ring-emerald-500">
-                                <span class="ml-2 text-slate-900">Thu (Income)</span>
+                        <legend class="block text-sm font-medium text-slate-700 mb-2">Loại giao dịch</legend>
+                        <div class="grid grid-cols-2 gap-4">
+                            <label class="flex items-center justify-center border rounded-md p-3 cursor-pointer hover:bg-emerald-50 has-[:checked]:bg-emerald-50 has-[:checked]:border-emerald-500 transition">
+                                <input type="radio" name="type" value="income" class="h-4 w-4 text-emerald-600 border-gray-300 focus:ring-emerald-500 mr-2">
+                                <span class="text-sm font-medium text-slate-900">Thu Nhập</span>
                             </label>
-                            <label class="flex items-center">
-                                <input type="radio" name="type" value="expense" class="h-4 w-4 text-red-600 border-gray-300 focus:ring-red-500" checked> <!-- Default to Expense -->
-                                <span class="ml-2 text-slate-900">Chi (Expense)</span>
+                            <label class="flex items-center justify-center border rounded-md p-3 cursor-pointer hover:bg-red-50 has-[:checked]:bg-red-50 has-[:checked]:border-red-500 transition">
+                                <input type="radio" name="type" value="expense" class="h-4 w-4 text-red-600 border-gray-300 focus:ring-red-500 mr-2" checked>
+                                <span class="text-sm font-medium text-slate-900">Chi Tiêu</span>
                             </label>
                         </div>
                     </fieldset>
 
-                    <!-- 2. DANH MỤC (CATEGORY) -->
-                    <div class="mb-4" id="descriptionContainer">
-                        <!-- Dynamic Input Field: Select for Income/Expense -->
-                    </div>
+                    <div class="mb-4" id="descriptionContainer"></div>
 
-                    <!-- 3. SỐ TIỀN (AMOUNT) -->
                     <div class="mb-4">
                         <label for="amountInput" class="block text-sm font-medium text-slate-700">Số Tiền (VND)</label>
-                        <input type="number" id="amountInput" min="1" placeholder="Ví dụ: 50000" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm shadow-sm placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" required>
+                        <input type="number" id="amountInput" inputmode="numeric" pattern="[0-9]*" min="1" placeholder="Ví dụ: 50000" class="block w-full px-4 py-3 bg-white border border-slate-300 rounded-md text-base focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" required>
                     </div>
 
-                    <!-- 4. NGÀY GIAO DỊCH (DATE) -->
                     <div class="mb-4">
                         <label for="dateInput" class="block text-sm font-medium text-slate-700">Ngày Giao Dịch</label>
-                        <input type="date" id="dateInput" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" required>
+                        <input type="date" id="dateInput" class="mt-1 block w-full px-4 py-3 bg-white border border-slate-300 rounded-md text-base shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" required>
                     </div>
 
-                    <!-- 5. MÔ TẢ TÙY CHỈNH (CUSTOM DESCRIPTION) -->
                     <div class="mb-6">
-                        <label for="customDescriptionInput" class="block text-sm font-medium text-slate-700">Mô Tả Tùy Chỉnh (Không bắt buộc)</label>
-                        <input type="text" id="customDescriptionInput" placeholder="Ví dụ: Mua cà phê, Tiền tip" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm shadow-sm placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
-                        <p class="text-xs text-slate-500 mt-1">Nếu nhập, mô tả này sẽ được ưu tiên hiển thị thay cho Danh Mục.</p>
+                        <label for="customDescriptionInput" class="block text-sm font-medium text-slate-700">Mô Tả Tùy Chỉnh (Tùy chọn)</label>
+                        <input type="text" id="customDescriptionInput" placeholder="Ví dụ: Cà phê sáng..." class="mt-1 block w-full px-4 py-3 bg-white border border-slate-300 rounded-md text-base shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
                     </div>
                     
-                    <!-- Đẩy nút xuống dưới cùng -->
-                    <div class="flex-grow"></div> 
-                    <button type="submit" id="submitButton" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-300 ease-in-out mt-4">
-                        Lưu Vào Máy
+                    <button type="submit" id="submitButton" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-4 rounded-lg shadow-md transition duration-300 text-base">
+                        Lưu Giao Dịch
                     </button>
                 </form>
             </div>
             
-            <!-- Cột 2: Phân Tích Chi Tiêu -->
-            <div class="bg-white p-6 rounded-lg shadow-lg flex flex-col">
-                <h2 class="text-2xl font-bold text-slate-800 mb-4">Phân Tích Chi Tiêu</h2>
-                <p class="text-slate-600 mb-6">Biểu đồ cột hiển thị tổng chi tiêu theo từng nhóm danh mục.</p>
+            <!-- Chart -->
+            <div class="bg-white p-5 rounded-lg shadow-lg flex flex-col order-1 lg:order-2">
+                <h2 class="text-xl md:text-2xl font-bold text-slate-800 mb-4">Phân Tích Chi Tiêu</h2>
+                <p class="text-slate-600 mb-2 text-sm">Phân bổ chi tiêu tháng này.</p>
                 <div class="chart-container">
                     <canvas id="financeChart"></canvas>
                 </div>
             </div>
         </div>
 
-        <!-- LAYOUT FIX: Lịch Sử Giao Dịch (Toàn bộ chiều rộng) -->
-        <div class="bg-white p-6 rounded-lg shadow-lg">
-            <h2 class="text-2xl font-bold text-slate-800 mb-4">Lịch Sử Giao Dịch</h2>
-            <p class="text-slate-600 mb-6">Dữ liệu từ Google Sheet (S) + Dữ liệu lưu trong trình duyệt (L).</p>
-            <div id="historyList" class="space-y-3 max-h-96 overflow-y-auto pr-2">
-                <p id="noTransactionText" class="text-slate-500 text-center">Đang tải dữ liệu...</p>
+        <!-- History -->
+        <div class="bg-white p-5 rounded-lg shadow-lg mb-20">
+            <h2 class="text-xl md:text-2xl font-bold text-slate-800 mb-4">Lịch Sử Giao Dịch</h2>
+            <div id="historyList" class="space-y-3">
+                <p id="noTransactionText" class="text-slate-500 text-center py-8">Đang tải dữ liệu...</p>
             </div>
         </div>
         
-        <!-- FOOTER ACTIONS AND STATUS (NEW POSITION) -->
-        <div class="mt-8 mb-4 p-4 text-center bg-slate-50 rounded-lg shadow-inner border border-slate-200">
-            <!-- Export/Import Section -->
-            <div class="flex flex-wrap justify-center gap-4 mb-4">
-                <!-- Hidden File Input for Import -->
+        <!-- Footer actions -->
+        <div class="mt-8 mb-8 p-4 text-center bg-slate-50 rounded-lg shadow-inner border border-slate-200">
+            <div class="flex flex-col sm:flex-row justify-center gap-3 mb-4">
                 <input type="file" id="importFileInput" accept=".json" class="hidden" onchange="window.handleFileImport(event)">
-
-                <button onclick="window.exportDataToJson()" class="bg-slate-500 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out text-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline mr-1" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L10 11.586l2.293-2.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
-                        <path fill-rule="evenodd" d="M10 1a1 1 0 011 1v7a1 1 0 11-2 0V2a1 1 0 011-1z" clip-rule="evenodd" />
-                    </svg>
-                    Xuất Dữ Liệu (JSON)
+                <button onclick="window.exportDataToJson()" class="w-full sm:w-auto bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold py-3 px-6 rounded-lg shadow-sm transition text-sm flex items-center justify-center">
+                    Sao Lưu (JSON)
                 </button>
-                <button onclick="document.getElementById('importFileInput').click()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out text-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline mr-1" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L6.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                    </svg>
-                    Nhập Dữ Liệu (JSON)
+                <button onclick="document.getElementById('importFileInput').click()" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition text-sm flex items-center justify-center">
+                    Khôi Phục (JSON)
                 </button>
             </div>
-            
-            <!-- User ID info -->
-            <p class="text-slate-600 text-sm">Dữ liệu được lưu trong bộ nhớ trình duyệt (LocalStorage). (Trạng thái: <span id="userIdDisplay" class="font-mono text-xs bg-slate-200 px-1 rounded">Local/Offline</span>)</p>
+            <p class="text-slate-500 text-xs">Dữ liệu lưu tại trình duyệt này.</p>
         </div>
+    </div>
 
-    </div> <!-- closing max-w-6xl -->
-
-    <!-- Simple Modal for Messages -->
-    <div id="statusModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center p-4 z-50">
-        <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full">
-            <p id="modalMessage" class="text-center font-semibold text-slate-800"></p>
-            <button onclick="document.getElementById('statusModal').classList.add('hidden')" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-md">Đóng</button>
+    <!-- Modal -->
+    <div id="statusModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white p-6 rounded-xl shadow-2xl max-w-xs w-full text-center">
+            <h3 class="text-lg font-medium text-slate-900 mb-2">Thông báo</h3>
+            <p id="modalMessage" class="text-sm text-slate-500"></p>
+            <button onclick="document.getElementById('statusModal').classList.add('hidden')" class="mt-5 w-full py-2 bg-indigo-600 text-white rounded-md">Đóng</button>
         </div>
     </div>
 
     <script>
-        // --- 1. LOCAL STORAGE CONFIG ---
         const STORAGE_KEY = 'finance_app_local_data_v1';
-        
-        // Global state for transactions
         let sheetTransactions = []; 
-        let localTransactions = []; // Changed from firestoreTransactions
+        let localTransactions = []; 
         let allTransactions = []; 
         let financeChartInstance = null;
 
-        // UI elements
         const balanceDisplay = document.getElementById('balanceDisplay');
         const incomeDisplay = document.getElementById('incomeDisplay');
         const expenseDisplay = document.getElementById('expenseDisplay');
@@ -215,551 +151,241 @@
         const noTransactionText = document.getElementById('noTransactionText');
         const chartCanvas = document.getElementById('financeChart').getContext('2d');
         const transactionForm = document.getElementById('transactionForm');
-        const statusModal = document.getElementById('statusModal');
-        const modalMessage = document.getElementById('modalMessage');
 
-        // --- CẤU HÌNH GOOGLE SHEETS (Giữ nguyên để load lịch sử nếu có) ---
         const SHEET_ID = '1Fs72QcxZIFgYbL62wTvmUgGG9OeEiV_B';
         const GID = '0'; 
         const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}`;
 
-        // Helper functions
-        function showModal(message) {
-            modalMessage.textContent = message;
-            statusModal.classList.remove('hidden');
-            statusModal.classList.add('flex');
+        function showModal(msg) {
+            document.getElementById('modalMessage').textContent = msg;
+            document.getElementById('statusModal').classList.remove('hidden');
+            document.getElementById('statusModal').classList.add('flex');
         }
 
-        function formatCurrency(value) {
-            const numericValue = Number(value);
-            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(numericValue);
+        function formatCurrency(val) {
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
         }
 
-        function formatDisplayedDate(dateString) {
-            if (!dateString) return 'N/A';
-            const parts = dateString.split('-');
-            if (parts.length === 3) {
-                return `${parts[2]}/${parts[1]}`;
-            }
-            return 'N/A'; 
-        }
-
-        // --- 2. GOOGLE SHEETS PARSING ---
         function parseSheetData(jsonString) {
             const sheetData = [];
             try {
-                const jsonTextMatch = jsonString.match(/google\.visualization\.Query\.setResponse\(([^;]+)\);/);
-                let data = null;
-                if (jsonTextMatch && jsonTextMatch[1]) {
-                    data = JSON.parse(jsonTextMatch[1]).table;
-                } else {
-                    const jsonText = jsonString.substring(jsonString.indexOf('{'), jsonString.lastIndexOf('}') + 1);
-                    data = JSON.parse(jsonText).table;
-                }
-                
+                const match = jsonString.match(/google\.visualization\.Query\.setResponse\(([^;]+)\);/);
+                let data = match ? JSON.parse(match[1]).table : null;
                 if (data && data.rows) {
-                    for (let index = 1; index < data.rows.length; index++) {
-                        const row = data.rows[index];
-                        const cells = row.c;
-                        
-                        if (!cells[0] || !cells[1] || !cells[3] || cells[3].v === null) continue; 
-
-                        let dateStr = '';
-                        if (cells[0].f) {
-                            const formattedDate = String(cells[0].f).trim();
-                            
-                            if (formattedDate.includes('/')) {
-                                const dateParts = formattedDate.split('/');
-                                if (dateParts.length === 3) {
-                                    dateStr = `${dateParts[2]}-${dateParts[1].padStart(2, '0')}-${dateParts[0].padStart(2, '0')}`;
-                                }
-                            } else if (formattedDate.length === 10 && formattedDate.includes('-')) {
-                                dateStr = formattedDate;
-                            }
+                    for (let i = 1; i < data.rows.length; i++) {
+                        const c = data.rows[i].c;
+                        if (!c[0] || !c[1] || !c[3] || c[3].v === null) continue; 
+                        let dStr = '';
+                        if (c[0].f) {
+                            const f = String(c[0].f).trim();
+                            if (f.includes('/')) {
+                                const p = f.split('/');
+                                if (p.length === 3) dStr = `${p[2]}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`;
+                            } else if (f.length === 10 && f.includes('-')) dStr = f;
                         }
-                        
-                        if (!dateStr || dateStr.length !== 10) continue;
-                        
-                        const typeText = cells[1].v ? String(cells[1].v).toLowerCase().trim() : 'chi';
-                        const type = (typeText === 'thu') ? 'income' : (typeText === 'chi' ? 'expense' : 'expense');
-                        const predefinedCategory = cells[2] && cells[2].v ? String(cells[2].v).trim() : 'Khác';
-                        const amount = parseFloat(cells[3].v);
-                        if (isNaN(amount) || amount <= 0) continue; 
-                        const customDescription = cells[4] && cells[4].v ? String(cells[4].v).trim() : '';
-                        
-                        const txId = `sheet-${index}`; 
-                        
+                        if (dStr.length !== 10) continue;
                         sheetData.push({
-                            id: txId, 
-                            type: type,
-                            amount: amount,
-                            category: customDescription || predefinedCategory, 
-                            predefinedCategory: predefinedCategory,            
-                            date: dateStr,
+                            id: `sheet-${i}`, type: (String(c[1].v).toLowerCase().trim() === 'thu' ? 'income' : 'expense'),
+                            amount: parseFloat(c[3].v),
+                            category: (c[4] && c[4].v ? String(c[4].v) : (c[2] && c[2].v ? String(c[2].v) : 'Khác')).trim(),
+                            predefinedCategory: c[2] && c[2].v ? String(c[2].v).trim() : 'Khác',
+                            date: dStr
                         });
                     }
                 }
-            } catch (e) {
-                console.error("Lỗi parse Sheet:", e);
-            }
+            } catch (e) { console.error(e); }
             return sheetData;
         }
 
         async function fetchSheetData() {
             try {
-                noTransactionText.textContent = "Đang tải dữ liệu...";
-                const response = await fetch(SHEET_URL);
-                if (!response.ok) throw new Error("Network response was not ok");
-                const text = await response.text();
+                const res = await fetch(SHEET_URL);
+                const text = await res.text();
                 sheetTransactions = parseSheetData(text);
-                console.log(`Đã tải ${sheetTransactions.length} giao dịch từ Sheet.`);
-            } catch (error) {
-                console.warn("Không thể tải Google Sheet (Có thể do Offline), bỏ qua.");
-                sheetTransactions = [];
-            }
+            } catch (e) { sheetTransactions = []; }
         }
 
-        // --- 3. LOCAL STORAGE OPERATIONS (Replacement for Firestore) ---
-
-        function loadLocalTransactions() {
-            try {
-                const dataStr = localStorage.getItem(STORAGE_KEY);
-                if (dataStr) {
-                    localTransactions = JSON.parse(dataStr);
-                    // Ensure local IDs don't conflict with sheet IDs, though using timestamp is usually safe
-                    console.log(`Đã tải ${localTransactions.length} giao dịch từ LocalStorage.`);
-                } else {
-                    localTransactions = [];
-                }
-                updateAllTransactionsAndUI();
-            } catch (e) {
-                console.error("Lỗi đọc LocalStorage:", e);
-                showModal("Lỗi đọc dữ liệu từ trình duyệt.");
-            }
+        function loadLocal() {
+            localTransactions = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+            updateUI();
         }
 
-        function saveLocalTransactionsToStorage() {
-            try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(localTransactions));
-            } catch (e) {
-                console.error("Lỗi lưu LocalStorage:", e);
-                showModal("Bộ nhớ trình duyệt đầy hoặc bị lỗi.");
-            }
-        }
-
-        function addTransactionLocally(newTransaction) {
-            // Generate a simple ID based on timestamp
-            const newId = `local-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-            
-            const transactionWithId = {
-                ...newTransaction,
-                id: newId,
-                createdAt: new Date().toISOString()
-            };
-
-            localTransactions.push(transactionWithId);
-            saveLocalTransactionsToStorage();
-            
-            console.log("Đã lưu giao dịch vào LocalStorage.");
-            updateAllTransactionsAndUI();
-            showModal("Đã lưu giao dịch thành công (Offline).");
-        }
-
-        window.deleteTransaction = (id) => {
-            if (typeof id === 'string' && id.startsWith('sheet-')) {
-                showModal("Không thể xóa dữ liệu từ Google Sheet.");
-                return;
-            }
-
-            if (confirm("Bạn có chắc chắn muốn xóa giao dịch này khỏi máy?")) {
-                const initialLength = localTransactions.length;
-                localTransactions = localTransactions.filter(tx => tx.id !== id);
-                
-                if (localTransactions.length < initialLength) {
-                    saveLocalTransactionsToStorage();
-                    updateAllTransactionsAndUI();
-                    console.log(`Đã xóa giao dịch ${id}`);
-                } else {
-                    showModal("Không tìm thấy giao dịch để xóa.");
-                }
-            }
-        };
-
-        // --- 4. EXPORT/IMPORT LOGIC (Updated for LocalStorage) ---
-
-        window.exportDataToJson = () => {
-            if (allTransactions.length === 0) {
-                showModal("Không có giao dịch nào để xuất.");
-                return;
-            }
-            
-            // Export ALL valid transactions (excluding Sheet data if desired, or include them)
-            // Here we export only what we can manage (Local) plus maybe Sheet data for backup? 
-            // Let's export only Local data for backup restore purposes mainly, 
-            // OR export EVERYTHING for analysis. Let's export Local Data mostly for restore.
-            const exportableData = localTransactions.map(tx => ({
-                type: tx.type,
-                amount: tx.amount,
-                category: tx.category,
-                predefinedCategory: tx.predefinedCategory,
-                date: tx.date,
-            }));
-            
-            if (exportableData.length === 0) {
-                showModal("Chưa có dữ liệu cục bộ nào để xuất.");
-                return;
-            }
-
-            const jsonString = JSON.stringify(exportableData, null, 2);
-            const blob = new Blob([jsonString], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `finance_local_backup_${new Date().toISOString().substring(0, 10)}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            showModal(`Đã xuất ${exportableData.length} giao dịch cục bộ.`);
-        };
-
-        window.handleFileImport = (event) => {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const importedData = JSON.parse(e.target.result);
-                    if (!Array.isArray(importedData)) {
-                        throw new Error("Format JSON không hợp lệ.");
-                    }
-                    
-                    const cleanTransactions = importedData.map(tx => ({
-                        type: tx.type === 'income' ? 'income' : 'expense',
-                        amount: parseFloat(tx.amount) || 0,
-                        category: tx.category || 'Nhập từ File',
-                        predefinedCategory: tx.predefinedCategory || (tx.type === 'income' ? 'Khác' : 'Lặt Vặt'),
-                        date: tx.date || new Date().toISOString().substring(0, 10),
-                        id: `local-imp-${Date.now()}-${Math.random().toString(36).substr(2, 5)}` // Generate new IDs
-                    })).filter(tx => tx.amount > 0);
-                    
-                    if (cleanTransactions.length === 0) {
-                         showModal("Không tìm thấy giao dịch hợp lệ.");
-                         return;
-                    }
-
-                    // Merge with existing local data
-                    localTransactions = [...localTransactions, ...cleanTransactions];
-                    saveLocalTransactionsToStorage();
-                    updateAllTransactionsAndUI();
-                    
-                    showModal(`Đã nhập thêm ${cleanTransactions.length} giao dịch vào bộ nhớ máy.`);
-
-                } catch (error) {
-                    console.error("Lỗi import:", error);
-                    showModal("Lỗi đọc file JSON.");
-                } finally {
-                    event.target.value = ''; 
-                }
-            };
-            reader.readAsText(file);
-        };
-
-        // --- 5. UI & DATA UPDATES ---
-
-        function updateAllTransactionsAndUI() {
-            // Merge Sheet (Read-only) + Local (Read/Write)
+        function updateUI() {
             allTransactions = [...sheetTransactions, ...localTransactions];
+            noTransactionText.style.display = allTransactions.length === 0 ? 'block' : 'none';
             
-            if (allTransactions.length === 0) {
-                 noTransactionText.style.display = 'block';
-                 noTransactionText.textContent = "Chưa có giao dịch nào.";
-            } else {
-                 noTransactionText.style.display = 'none';
-            }
-
-            updateMetricsAndCalculateTotals();
-            renderHistory();
-            updateBarChart();
-        }
-
-        function updateMetricsAndCalculateTotals() {
-            let totalIncome = 0;
-            let totalExpense = 0;
+            // Calc metrics
+            const now = new Date();
+            const curM = String(now.getMonth() + 1).padStart(2, '0');
+            const curY = String(now.getFullYear());
+            let tIn = 0, tEx = 0, curMEx = 0;
 
             allTransactions.forEach(tx => {
-                if (tx.type === 'income') {
-                    totalIncome += tx.amount;
-                } else {
-                    totalExpense += tx.amount;
+                if (tx.type === 'income') tIn += tx.amount;
+                else {
+                    tEx += tx.amount;
+                    if (tx.date.startsWith(`${curY}-${curM}`)) curMEx += tx.amount;
                 }
             });
 
-            const balance = totalIncome - totalExpense;
-
-            balanceDisplay.textContent = formatCurrency(balance);
-            incomeDisplay.textContent = formatCurrency(totalIncome);
-            expenseDisplay.textContent = formatCurrency(totalExpense);
+            balanceDisplay.textContent = formatCurrency(tIn - tEx);
+            incomeDisplay.textContent = formatCurrency(tIn);
+            expenseDisplay.textContent = formatCurrency(curMEx);
+            balanceDisplay.className = `text-2xl md:text-3xl font-bold mt-2 ${(tIn-tEx) >= 0 ? 'text-emerald-600' : 'text-red-600'}`;
             
-            balanceDisplay.className = 'text-3xl font-bold mt-2';
-            if (balance > 0) balanceDisplay.classList.add('text-emerald-600');
-            else if (balance < 0) balanceDisplay.classList.add('text-red-600');
-            else balanceDisplay.classList.add('text-slate-900');
+            renderHistory();
+            renderChart(curY, curM);
         }
 
-        function getExpenseCategoryTotals() {
-            const reportCategories = ['Ăn Uống', 'Chi Hàng Tháng', 'Đưa Vợ', 'Khác'];
-            const totals = reportCategories.reduce((acc, category) => {
-                acc[category] = 0;
-                return acc;
-            }, {}); 
-            const categoriesForOther = ['Mua Đồ Online', 'Đi Chơi', 'Phát Sinh', 'Lặt Vặt'];
-            
-            allTransactions.filter(tx => tx.type === 'expense').forEach(tx => {
-                const inputCategory = tx.predefinedCategory; 
-                if (!inputCategory) return; 
-                let reportingCategory = 'Khác'; 
-                if (['Ăn Sáng', 'Ăn Trưa', 'Ăn Chiều', 'Ăn Tối', 'Ăn Vặt'].includes(inputCategory)) {
-                    reportingCategory = 'Ăn Uống';
-                } else if (inputCategory === 'Chi Hàng Tháng') {
-                    reportingCategory = 'Chi Hàng Tháng';
-                } else if (inputCategory === 'Đưa Vợ') {
-                    reportingCategory = 'Đưa Vợ';
-                } else if (categoriesForOther.includes(inputCategory) || inputCategory === 'Khác') {
-                    reportingCategory = 'Khác'; 
-                }
-                if (totals.hasOwnProperty(reportingCategory)) totals[reportingCategory] += tx.amount;
+        function renderChart(curY, curM) {
+            const totals = {'Ăn Uống': 0, 'Chi Hàng Tháng': 0, 'Đưa Vợ': 0, 'Khác': 0};
+            allTransactions.filter(tx => tx.type === 'expense' && tx.date.startsWith(`${curY}-${curM}`)).forEach(tx => {
+                let cat = 'Khác';
+                if (['Ăn Sáng', 'Ăn Trưa', 'Ăn Chiều', 'Ăn Tối', 'Ăn Vặt'].includes(tx.predefinedCategory)) cat = 'Ăn Uống';
+                else if (['Chi Hàng Tháng', 'Đưa Vợ'].includes(tx.predefinedCategory)) cat = tx.predefinedCategory;
+                if (totals.hasOwnProperty(cat)) totals[cat] += tx.amount;
             });
-            return totals;
-        }
+            const labels = Object.keys(totals).filter(k => totals[k] > 0);
+            const data = labels.map(k => totals[k]);
 
-        function updateBarChart() {
-            const categoryTotals = getExpenseCategoryTotals();
-            const filteredLabels = Object.keys(categoryTotals).filter(key => categoryTotals[key] > 0);
-            const filteredData = filteredLabels.map(key => categoryTotals[key]);
-            
             if (financeChartInstance) financeChartInstance.destroy();
-            chartCanvas.clearRect(0, 0, chartCanvas.canvas.width, chartCanvas.canvas.height);
-            
-            if (filteredData.length === 0) {
-                // Draw placeholder
-                return;
-            }
-
+            if (data.length === 0) return;
             financeChartInstance = new Chart(chartCanvas, {
-                type: 'bar',
-                data: {
-                    labels: filteredLabels,
-                    datasets: [{
-                        label: 'Tổng Chi Tiêu (VND)',
-                        data: filteredData,
-                        backgroundColor: 'rgba(239, 68, 68, 0.7)', 
-                        borderColor: 'rgba(239, 68, 68, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false, 
-                    indexAxis: 'y', 
-                    scales: {
-                        x: {
-                            beginAtZero: true,
-                            ticks: { callback: (val) => new Intl.NumberFormat('vi-VN').format(val), font: { family: "'Inter', sans-serif" } }
-                        },
-                        y: { ticks: { font: { family: "'Inter', sans-serif" } } }
-                    },
-                    plugins: { legend: { display: false } }
-                }
+                type: 'bar', data: { labels, datasets: [{ data, backgroundColor: 'rgba(239,68,68,0.7)', borderRadius: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } } }
             });
         }
 
         function renderHistory() {
-            historyList.innerHTML = ''; 
-            // Sort Descending Date
-            const sortedTransactions = [...allTransactions].sort((a, b) => {
-                if (a.date < b.date) return -1;
-                if (a.date > b.date) return 1;
-                return 0;
+            historyList.innerHTML = '';
+            const sorted = [...allTransactions].sort((a, b) => a.date.localeCompare(b.date));
+            let balance = 0;
+            const groups = {};
+            sorted.forEach(tx => {
+                balance += tx.amount * (tx.type === 'income' ? 1 : -1);
+                const [y, m] = tx.date.split('-');
+                if (!groups[y]) groups[y] = {};
+                if (!groups[y][m]) groups[y][m] = [];
+                groups[y][m].push({ ...tx, runningBalance: balance });
             });
 
-            let cumulativeBalance = 0;
-            const historyData = {}; 
-            
-            sortedTransactions.forEach(tx => {
-                const year = tx.date.substring(0, 4);
-                const month = tx.date.substring(5, 7);
-                const sign = tx.type === 'income' ? 1 : -1;
-                cumulativeBalance += tx.amount * sign; 
+            Object.keys(groups).sort((a, b) => b - a).forEach(y => {
+                const yDet = document.createElement('details');
+                yDet.className = 'mb-3 bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden';
+                yDet.open = (y === new Date().getFullYear().toString());
+                const mKeys = Object.keys(groups[y]).sort((a, b) => b - a);
+                yDet.innerHTML = `<summary class="flex justify-between p-3 font-bold bg-slate-50">Năm ${y} <span>${formatCurrency(groups[y][mKeys[0]].slice(-1)[0].runningBalance)}</span></summary>`;
                 
-                const txWithBalance = { ...tx, runningBalance: cumulativeBalance };
-
-                if (!historyData[year]) historyData[year] = { months: {} };
-                if (!historyData[year].months[month]) historyData[year].months[month] = [];
-                historyData[year].months[month].push(txWithBalance);
-            });
-            
-            const sortedYears = Object.keys(historyData).sort((a, b) => b - a); 
-            const currentYear = new Date().getFullYear().toString();
-            const currentMonth = String(new Date().getMonth() + 1).padStart(2, '0'); 
-
-            sortedYears.forEach(year => {
-                const yearData = historyData[year];
-                const monthKeysDesc = Object.keys(yearData.months).sort((a, b) => b - a); 
-                
-                const lastTxOfYear = yearData.months[monthKeysDesc[0]].slice(-1)[0];
-                const yearEndBalance = lastTxOfYear ? lastTxOfYear.runningBalance : 0;
-                
-                const yearDetail = document.createElement('details');
-                yearDetail.className = 'mb-3 border border-slate-300 rounded-lg shadow-md';
-                yearDetail.open = (year === currentYear); 
-
-                const yearSummary = document.createElement('summary');
-                yearSummary.className = 'flex justify-between items-center p-3 cursor-pointer bg-slate-100 font-bold text-slate-800 hover:bg-slate-200 rounded-lg';
-                yearSummary.innerHTML = `
-                    <span>Năm ${year}</span>
-                    <span class="${yearEndBalance >= 0 ? 'text-emerald-700' : 'text-red-700'}">${formatCurrency(yearEndBalance)}</span>
-                `;
-                yearDetail.appendChild(yearSummary);
-
-                monthKeysDesc.forEach(monthKey => {
-                    const monthData = yearData.months[monthKey]; 
-                    const lastTxOfMonth = monthData.slice(-1)[0];
-                    const monthEndBalance = lastTxOfMonth ? lastTxOfMonth.runningBalance : 0;
-                    const monthName = new Date(year, monthKey - 1).toLocaleString('vi-VN', { month: 'long' });
-                    
-                    const monthDetail = document.createElement('details');
-                    monthDetail.className = 'border-t border-slate-200 bg-white';
-                    monthDetail.open = (year === currentYear && monthKey === currentMonth);
-
-                    const monthSummary = document.createElement('summary');
-                    monthSummary.className = 'flex justify-between items-center p-3 pl-8 cursor-pointer font-semibold text-slate-700 hover:bg-slate-50';
-                    monthSummary.innerHTML = `
-                        <span>${monthName} ${year}</span>
-                        <span class="${monthEndBalance >= 0 ? 'text-indigo-600' : 'text-red-600'} text-sm mr-4">Số dư: ${formatCurrency(monthEndBalance)}</span>
-                    `;
-                    monthDetail.appendChild(monthSummary);
-                    
-                    const monthTxContainer = document.createElement('div');
-                    monthTxContainer.className = 'px-4 pb-2 text-xs overflow-x-auto'; 
-                    monthTxContainer.innerHTML = `
-                        <div class="flex font-semibold text-slate-500 border-b pb-1 mb-1 mt-1 sticky top-0 bg-white z-10 min-w-[500px]">
-                            <span class="w-3/6">Mục</span>
-                            <span class="w-1/6 text-right">Chi/Thu</span>
-                            <span class="w-1/6 text-center">Ngày</span> 
-                            <span class="w-1/6 text-right">Số Dư</span>
-                            <span class="w-6 flex-shrink-0"></span> 
-                        </div>
-                    `;
-                    
-                    // Show transactions reversed (newest first in month)
-                    [...monthData].reverse().forEach(tx => { 
-                        const isSheet = tx.id.startsWith('sheet-');
-                        const item = document.createElement('div');
-                        item.className = `tx-line text-sm min-w-[500px] ${isSheet ? 'hover:bg-slate-50/50' : 'hover:bg-indigo-50/50'}`; 
-                        const sign = tx.type === 'income' ? '+' : '-';
-                        const amountColor = tx.type === 'income' ? 'text-emerald-600' : 'text-red-600';
-                        
-                        let deleteButton;
-                        if (isSheet) {
-                             deleteButton = `<span class="w-6 flex-shrink-0 text-slate-400 text-xs text-center font-bold" title="Google Sheet (Chỉ xem)">S</span>`;
-                        } else {
-                             // Use 'L' for Local
-                             deleteButton = `<button class="delete-btn" onclick="deleteTransaction('${tx.id}')" title="Xóa (Local)">L</button>`;
-                        }
-                        
-                        item.innerHTML = `
-                            <span class="w-3/6 font-medium text-slate-800 truncate pr-2">${tx.category}</span>
-                            <span class="w-1/6 text-right font-bold ${amountColor}">${sign} ${formatCurrency(tx.amount)}</span>
-                            <span class="w-1/6 text-center text-slate-500">${formatDisplayedDate(tx.date)}</span> 
-                            <span class="w-1/6 text-right font-semibold text-slate-700">${formatCurrency(tx.runningBalance)}</span>
-                            ${deleteButton}
-                        `;
-                        monthTxContainer.appendChild(item);
+                mKeys.forEach(m => {
+                    const mDet = document.createElement('details');
+                    mDet.className = 'border-t border-slate-100';
+                    mDet.open = (yDet.open && m === String(new Date().getMonth() + 1).padStart(2, '0'));
+                    mDet.innerHTML = `<summary class="flex justify-between p-3 pl-6 text-sm font-semibold">Tháng ${m} <span>Dư: ${formatCurrency(groups[y][m].slice(-1)[0].runningBalance)}</span></summary>`;
+                    const cont = document.createElement('div');
+                    cont.className = 'px-4 pb-2';
+                    [...groups[y][m]].reverse().forEach(tx => {
+                        const row = document.createElement('div');
+                        row.className = 'flex justify-between items-center py-3 border-b last:border-0';
+                        row.innerHTML = `<div class="flex flex-col text-sm"><b>${tx.category}</b><small class="text-slate-400">${tx.date.split('-').reverse().slice(0,2).join('/')}</small></div>
+                                         <div class="text-right flex flex-col"><b class="${tx.type==='income'?'text-emerald-600':'text-red-600'}">${tx.type==='income'?'+':'-'} ${formatCurrency(tx.amount)}</b><small class="text-[10px] text-slate-400">Dư: ${formatCurrency(tx.runningBalance)}</small></div>
+                                         ${tx.id.startsWith('sheet-')?'':`<button onclick="delTx('${tx.id}')" class="delete-btn ml-2">×</button>`}`;
+                        cont.appendChild(row);
                     });
-                    monthDetail.appendChild(monthTxContainer);
-                    yearDetail.appendChild(monthDetail);
+                    mDet.appendChild(cont);
+                    yDet.appendChild(mDet);
                 });
-                historyList.appendChild(yearDetail);
+                historyList.appendChild(yDet);
             });
         }
 
-        // --- 6. FORM & INIT ---
-        const incomeCategories = ['Lương', 'Khác']; 
-        const expenseCategories = ['Ăn Sáng', 'Ăn Trưa', 'Ăn Chiều', 'Ăn Tối', 'Ăn Vặt', 'Mua Đồ Online', 'Chi Hàng Tháng', 'Đưa Vợ', 'Đi Chơi', 'Phát Sinh', 'Lặt Vặt'];
-        const descriptionContainer = document.getElementById('descriptionContainer');
-        const amountInput = document.getElementById('amountInput');
-        const dateInput = document.getElementById('dateInput');
-        const customDescriptionInput = document.getElementById('customDescriptionInput'); 
-        const typeSelector = document.getElementById('typeSelector');
+        window.delTx = (id) => {
+            if (confirm("Xóa giao dịch này?")) {
+                localTransactions = localTransactions.filter(t => t.id !== id);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(localTransactions));
+                updateUI();
+            }
+        };
 
-        function setDefaultDate() {
-            const today = new Date();
-            dateInput.value = today.toISOString().split('T')[0];
-        }
+        // --- FIXED EXPORT ---
+        window.exportDataToJson = () => {
+            // Export ALL transactions currently visible, but formatted cleanly
+            const dataToExport = allTransactions.map(tx => ({
+                type: tx.type,
+                amount: tx.amount,
+                category: tx.category,
+                predefinedCategory: tx.predefinedCategory,
+                date: tx.date
+            }));
 
-        function createCategoryField(items, labelText) {
-            const optionsHtml = items.map(cat => `<option value="${cat}">${cat}</option>`).join('');
-            descriptionContainer.innerHTML = `
-                <label for="categoryInput" class="block text-sm font-medium text-slate-700">${labelText}</label>
-                <select id="categoryInput" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
-                    ${optionsHtml}
-                </select>
-            `;
-        }
+            if (dataToExport.length === 0) {
+                showModal("Không có dữ liệu để sao lưu.");
+                return;
+            }
 
-        function updateCategoryField() {
-            const type = document.querySelector('input[name="type"]:checked').value;
-            if (type === 'income') createCategoryField(incomeCategories, 'Danh Mục Thu Nhập');
-            else createCategoryField(expenseCategories, 'Danh Mục Chi Tiêu');
-        }
+            try {
+                const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `quan_ly_thu_chi_${new Date().toISOString().slice(0,10)}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } catch (e) {
+                showModal("Lỗi khi tạo file sao lưu.");
+            }
+        };
+
+        window.handleFileImport = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    if (!Array.isArray(data)) throw new Error();
+                    const imported = data.map(t => ({ ...t, id: `local-${Date.now()}-${Math.random()}` }));
+                    localTransactions = [...localTransactions, ...imported];
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(localTransactions));
+                    updateUI();
+                    showModal(`Đã khôi phục ${imported.length} giao dịch.`);
+                } catch { showModal("File không đúng định dạng."); }
+            };
+            reader.readAsText(file);
+        };
+
+        const incomeCats = ['Lương', 'Thưởng', 'Khác'];
+        const expenseCats = ['Ăn Sáng', 'Ăn Trưa', 'Ăn Chiều', 'Ăn Tối', 'Ăn Vặt', 'Mua Đồ Online', 'Chi Hàng Tháng', 'Đưa Vợ', 'Đi Chơi', 'Phát Sinh', 'Lặt Vặt'];
         
-        typeSelector.addEventListener('change', updateCategoryField);
+        function updateCats() {
+            const type = document.querySelector('input[name="type"]:checked').value;
+            const list = type === 'income' ? incomeCats : expenseCats;
+            document.getElementById('descriptionContainer').innerHTML = `<label class="block text-sm font-medium mb-1">Danh Mục</label>
+                <select id="catInput" class="block w-full p-3 border rounded-md">${list.map(c => `<option value="${c}">${c}</option>`).join('')}</select>`;
+        }
 
         transactionForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const amount = parseFloat(amountInput.value);
-            if (isNaN(amount) || amount <= 0) { showModal("Số tiền phải > 0"); return; }
-            
+            const amount = parseFloat(document.getElementById('amountInput').value);
             const type = document.querySelector('input[name="type"]:checked').value;
-            const categoryInput = document.getElementById('categoryInput');
-            const selectedDate = dateInput.value;
-            const customDescription = customDescriptionInput.value.trim();
-            const selectedPredefinedCategory = categoryInput ? categoryInput.value : '';
-            const displayDescription = customDescription || selectedPredefinedCategory;
-            
-            if (!displayDescription || !selectedDate) { showModal("Vui lòng điền đầy đủ thông tin."); return; }
-
-            const newTransaction = {
-                type,
-                amount,
-                category: displayDescription,         
-                predefinedCategory: selectedPredefinedCategory, 
-                date: selectedDate,
-            };
-            
-            addTransactionLocally(newTransaction);
-            
-            // Reset
-            transactionForm.reset();
-            document.querySelector('input[name="type"][value="expense"]').checked = true;
-            updateCategoryField();
-            setDefaultDate();
+            const cat = document.getElementById('catInput').value;
+            const custom = document.getElementById('customDescriptionInput').value.trim();
+            localTransactions.push({ id: `local-${Date.now()}`, type, amount, category: custom || cat, predefinedCategory: cat, date: document.getElementById('dateInput').value });
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(localTransactions));
+            transactionForm.reset(); updateCats(); 
+            const d = new Date(); document.getElementById('dateInput').value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            updateUI();
         });
 
-        async function initFinanceApp() { 
-            // 1. Tải Google Sheet (Async - không chặn UI)
+        async function init() {
+            const d = new Date(); document.getElementById('dateInput').value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            updateCats();
+            document.getElementById('typeSelector').addEventListener('change', updateCats);
             await fetchSheetData();
-            // 2. Tải Local Storage
-            loadLocalTransactions();
-            
-            // 3. UI Init
-            setDefaultDate(); 
-            updateCategoryField();
+            loadLocal();
         }
-        
-        initFinanceApp();
+        init();
     </script>
 </body>
 </html>
