@@ -1,49 +1,765 @@
+<!-- Chosen Palette: Calm Neutrals (Tailwind Slate) with Indigo (Income) and Red (Expense) accents. -->
+<!-- File này được tối ưu hóa để chạy HOÀN TOÀN CỤC BỘ (LocalStorage) -->
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản Lý Chi Tiêu</title>
+    <title>Quản Lý Thu Chi Cá Nhân (Local Cache)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #f4f4f9; }
-        .card { background: white; padding: 15px; border-radius: 10px; shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        input, select, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 5px; border: 1px solid #ddd; box-sizing: border-box; }
-        button { background: #28a745; color: white; border: none; font-weight: bold; }
-        ul { list-style: none; padding: 0; }
-        li { background: white; margin: 5px 0; padding: 10px; border-radius: 5px; display: flex; justify-content: space-between; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9; /* Tailwind Slate 100 */
+        }
+        .metric-card {
+            background-color: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+        .metric-card:hover {
+            transform: translateY(-2px);
+        }
+        .tx-line {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px dashed #e2e8f0; /* Slate 200 */
+        }
+        .tx-line:last-child {
+            border-bottom: none;
+        }
+
+        .delete-btn {
+            background-color: #fee2e2; /* Red 100 */
+            color: #b91c1c; /* Red 700 */
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            line-height: 24px;
+            font-weight: 700;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            margin-left: 0.5rem;
+            flex-shrink: 0; 
+        }
+        .delete-btn:hover {
+            background-color: #fecaca; /* Red 200 */
+            color: #991b1b; /* Red 800 */
+        }
+        
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            min-height: 400px; 
+            margin-left: auto;
+            margin-right: auto;
+            flex-grow: 1; 
+        }
     </style>
 </head>
-<body>
+<body class="p-4 md:p-8">
+    <div class="max-w-6xl mx-auto">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-800">Quản Lý Thu Chi (Local Storage)</h1>
+        </header>
 
-    <h2>Ví Của Tôi</h2>
-    <div class="card">
-        <input type="number" id="amount" placeholder="Số tiền (đ)">
-        <input type="text" id="note" placeholder="Ghi chú (vd: Ăn sáng)">
-        <button onclick="saveData()">Lưu Chi Tiêu</button>
+        <!-- Metrics -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="metric-card">
+                <h2 class="text-sm font-medium text-slate-500 uppercase">Số Dư Hiện Tại</h2>
+                <p id="balanceDisplay" class="text-3xl font-bold text-slate-900 mt-2">0 ₫</p>
+            </div>
+            <div class="metric-card">
+                <h2 class="text-sm font-medium text-slate-500 uppercase">Tổng Thu</h2>
+                <p id="incomeDisplay" class="text-3xl font-bold text-emerald-600 mt-2">0 ₫</p>
+            </div>
+            <div class="metric-card">
+                <h2 class="text-sm font-medium text-slate-500 uppercase">Tổng Chi</h2>
+                <p id="expenseDisplay" class="text-3xl font-bold text-red-600 mt-2">0 ₫</p>
+            </div>
+        </div>
+
+        <!-- LAYOUT FIX: Bố cục 2 cột cho Form và Phân tích (Bằng nhau) -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Cột 1: Thêm Giao Dịch Mới -->
+            <div class="bg-white p-6 rounded-lg shadow-lg flex flex-col">
+                <h2 class="text-2xl font-bold text-slate-800 mb-4">Thêm Giao Dịch Mới</h2>
+                <p id="cloudStatusText" class="text-emerald-600 font-medium mb-6">Đang chạy chế độ LƯU TRỮ CỤC BỘ (Offline).</p>
+                <form id="transactionForm" class="flex flex-col flex-grow">
+                    <!-- 1. LOẠI (TYPE) -->
+                    <fieldset class="mb-4" id="typeSelector">
+                        <legend class="block text-sm font-medium text-slate-700 mb-2">Loại</legend>
+                        <div class="flex items-center gap-6">
+                            <label class="flex items-center">
+                                <input type="radio" name="type" value="income" class="h-4 w-4 text-emerald-600 border-gray-300 focus:ring-emerald-500">
+                                <span class="ml-2 text-slate-900">Thu (Income)</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="type" value="expense" class="h-4 w-4 text-red-600 border-gray-300 focus:ring-red-500" checked> <!-- Default to Expense -->
+                                <span class="ml-2 text-slate-900">Chi (Expense)</span>
+                            </label>
+                        </div>
+                    </fieldset>
+
+                    <!-- 2. DANH MỤC (CATEGORY) -->
+                    <div class="mb-4" id="descriptionContainer">
+                        <!-- Dynamic Input Field: Select for Income/Expense -->
+                    </div>
+
+                    <!-- 3. SỐ TIỀN (AMOUNT) -->
+                    <div class="mb-4">
+                        <label for="amountInput" class="block text-sm font-medium text-slate-700">Số Tiền (VND)</label>
+                        <input type="number" id="amountInput" min="1" placeholder="Ví dụ: 50000" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm shadow-sm placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" required>
+                    </div>
+
+                    <!-- 4. NGÀY GIAO DỊCH (DATE) -->
+                    <div class="mb-4">
+                        <label for="dateInput" class="block text-sm font-medium text-slate-700">Ngày Giao Dịch</label>
+                        <input type="date" id="dateInput" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" required>
+                    </div>
+
+                    <!-- 5. MÔ TẢ TÙY CHỈNH (CUSTOM DESCRIPTION) -->
+                    <div class="mb-6">
+                        <label for="customDescriptionInput" class="block text-sm font-medium text-slate-700">Mô Tả Tùy Chỉnh (Không bắt buộc)</label>
+                        <input type="text" id="customDescriptionInput" placeholder="Ví dụ: Mua cà phê, Tiền tip" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm shadow-sm placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                        <p class="text-xs text-slate-500 mt-1">Nếu nhập, mô tả này sẽ được ưu tiên hiển thị thay cho Danh Mục.</p>
+                    </div>
+                    
+                    <!-- Đẩy nút xuống dưới cùng -->
+                    <div class="flex-grow"></div> 
+                    <button type="submit" id="submitButton" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-300 ease-in-out mt-4">
+                        Lưu Vào Máy
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Cột 2: Phân Tích Chi Tiêu -->
+            <div class="bg-white p-6 rounded-lg shadow-lg flex flex-col">
+                <h2 class="text-2xl font-bold text-slate-800 mb-4">Phân Tích Chi Tiêu</h2>
+                <p class="text-slate-600 mb-6">Biểu đồ cột hiển thị tổng chi tiêu theo từng nhóm danh mục.</p>
+                <div class="chart-container">
+                    <canvas id="financeChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- LAYOUT FIX: Lịch Sử Giao Dịch (Toàn bộ chiều rộng) -->
+        <div class="bg-white p-6 rounded-lg shadow-lg">
+            <h2 class="text-2xl font-bold text-slate-800 mb-4">Lịch Sử Giao Dịch</h2>
+            <p class="text-slate-600 mb-6">Dữ liệu từ Google Sheet (S) + Dữ liệu lưu trong trình duyệt (L).</p>
+            <div id="historyList" class="space-y-3 max-h-96 overflow-y-auto pr-2">
+                <p id="noTransactionText" class="text-slate-500 text-center">Đang tải dữ liệu...</p>
+            </div>
+        </div>
+        
+        <!-- FOOTER ACTIONS AND STATUS (NEW POSITION) -->
+        <div class="mt-8 mb-4 p-4 text-center bg-slate-50 rounded-lg shadow-inner border border-slate-200">
+            <!-- Export/Import Section -->
+            <div class="flex flex-wrap justify-center gap-4 mb-4">
+                <!-- Hidden File Input for Import -->
+                <input type="file" id="importFileInput" accept=".json" class="hidden" onchange="window.handleFileImport(event)">
+
+                <button onclick="window.exportDataToJson()" class="bg-slate-500 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out text-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline mr-1" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L10 11.586l2.293-2.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        <path fill-rule="evenodd" d="M10 1a1 1 0 011 1v7a1 1 0 11-2 0V2a1 1 0 011-1z" clip-rule="evenodd" />
+                    </svg>
+                    Xuất Dữ Liệu (JSON)
+                </button>
+                <button onclick="document.getElementById('importFileInput').click()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out text-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline mr-1" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L6.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                    </svg>
+                    Nhập Dữ Liệu (JSON)
+                </button>
+            </div>
+            
+            <!-- User ID info -->
+            <p class="text-slate-600 text-sm">Dữ liệu được lưu trong bộ nhớ trình duyệt (LocalStorage). (Trạng thái: <span id="userIdDisplay" class="font-mono text-xs bg-slate-200 px-1 rounded">Local/Offline</span>)</p>
+        </div>
+
+    </div> <!-- closing max-w-6xl -->
+
+    <!-- Simple Modal for Messages -->
+    <div id="statusModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full">
+            <p id="modalMessage" class="text-center font-semibold text-slate-800"></p>
+            <button onclick="document.getElementById('statusModal').classList.add('hidden')" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-md">Đóng</button>
+        </div>
     </div>
 
-    <h3>Lịch sử</h3>
-    <ul id="history"></ul>
-
     <script>
-        function saveData() {
-            const amount = document.getElementById('amount').value;
-            const note = document.getElementById('note').value;
-            if(!amount) return;
+        // --- 1. LOCAL STORAGE CONFIG ---
+        const STORAGE_KEY = 'finance_app_local_data_v1';
+        
+        // Global state for transactions
+        let sheetTransactions = []; 
+        let localTransactions = []; // Changed from firestoreTransactions
+        let allTransactions = []; 
+        let financeChartInstance = null;
 
-            const item = { amount, note, date: new Date().toLocaleDateString() };
-            let data = JSON.parse(localStorage.getItem('expenses') || '[]');
-            data.push(item);
-            localStorage.setItem('expenses', JSON.stringify(data));
-            render();
+        // UI elements
+        const balanceDisplay = document.getElementById('balanceDisplay');
+        const incomeDisplay = document.getElementById('incomeDisplay');
+        const expenseDisplay = document.getElementById('expenseDisplay');
+        const historyList = document.getElementById('historyList');
+        const noTransactionText = document.getElementById('noTransactionText');
+        const chartCanvas = document.getElementById('financeChart').getContext('2d');
+        const transactionForm = document.getElementById('transactionForm');
+        const statusModal = document.getElementById('statusModal');
+        const modalMessage = document.getElementById('modalMessage');
+
+        // --- CẤU HÌNH GOOGLE SHEETS (Giữ nguyên để load lịch sử nếu có) ---
+        const SHEET_ID = '1Fs72QcxZIFgYbL62wTvmUgGG9OeEiV_B';
+        const GID = '0'; 
+        const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}`;
+
+        // Helper functions
+        function showModal(message) {
+            modalMessage.textContent = message;
+            statusModal.classList.remove('hidden');
+            statusModal.classList.add('flex');
         }
 
-        function render() {
-            const list = document.getElementById('history');
-            const data = JSON.parse(localStorage.getItem('expenses') || '[]');
-            list.innerHTML = data.map(i => `<li><span>${i.note}</span> <b>-${i.amount}đ</b></li>`).join('');
+        function formatCurrency(value) {
+            const numericValue = Number(value);
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(numericValue);
         }
-        render();
+
+        function formatDisplayedDate(dateString) {
+            if (!dateString) return 'N/A';
+            const parts = dateString.split('-');
+            if (parts.length === 3) {
+                return `${parts[2]}/${parts[1]}`;
+            }
+            return 'N/A'; 
+        }
+
+        // --- 2. GOOGLE SHEETS PARSING ---
+        function parseSheetData(jsonString) {
+            const sheetData = [];
+            try {
+                const jsonTextMatch = jsonString.match(/google\.visualization\.Query\.setResponse\(([^;]+)\);/);
+                let data = null;
+                if (jsonTextMatch && jsonTextMatch[1]) {
+                    data = JSON.parse(jsonTextMatch[1]).table;
+                } else {
+                    const jsonText = jsonString.substring(jsonString.indexOf('{'), jsonString.lastIndexOf('}') + 1);
+                    data = JSON.parse(jsonText).table;
+                }
+                
+                if (data && data.rows) {
+                    for (let index = 1; index < data.rows.length; index++) {
+                        const row = data.rows[index];
+                        const cells = row.c;
+                        
+                        if (!cells[0] || !cells[1] || !cells[3] || cells[3].v === null) continue; 
+
+                        let dateStr = '';
+                        if (cells[0].f) {
+                            const formattedDate = String(cells[0].f).trim();
+                            
+                            if (formattedDate.includes('/')) {
+                                const dateParts = formattedDate.split('/');
+                                if (dateParts.length === 3) {
+                                    dateStr = `${dateParts[2]}-${dateParts[1].padStart(2, '0')}-${dateParts[0].padStart(2, '0')}`;
+                                }
+                            } else if (formattedDate.length === 10 && formattedDate.includes('-')) {
+                                dateStr = formattedDate;
+                            }
+                        }
+                        
+                        if (!dateStr || dateStr.length !== 10) continue;
+                        
+                        const typeText = cells[1].v ? String(cells[1].v).toLowerCase().trim() : 'chi';
+                        const type = (typeText === 'thu') ? 'income' : (typeText === 'chi' ? 'expense' : 'expense');
+                        const predefinedCategory = cells[2] && cells[2].v ? String(cells[2].v).trim() : 'Khác';
+                        const amount = parseFloat(cells[3].v);
+                        if (isNaN(amount) || amount <= 0) continue; 
+                        const customDescription = cells[4] && cells[4].v ? String(cells[4].v).trim() : '';
+                        
+                        const txId = `sheet-${index}`; 
+                        
+                        sheetData.push({
+                            id: txId, 
+                            type: type,
+                            amount: amount,
+                            category: customDescription || predefinedCategory, 
+                            predefinedCategory: predefinedCategory,            
+                            date: dateStr,
+                        });
+                    }
+                }
+            } catch (e) {
+                console.error("Lỗi parse Sheet:", e);
+            }
+            return sheetData;
+        }
+
+        async function fetchSheetData() {
+            try {
+                noTransactionText.textContent = "Đang tải dữ liệu...";
+                const response = await fetch(SHEET_URL);
+                if (!response.ok) throw new Error("Network response was not ok");
+                const text = await response.text();
+                sheetTransactions = parseSheetData(text);
+                console.log(`Đã tải ${sheetTransactions.length} giao dịch từ Sheet.`);
+            } catch (error) {
+                console.warn("Không thể tải Google Sheet (Có thể do Offline), bỏ qua.");
+                sheetTransactions = [];
+            }
+        }
+
+        // --- 3. LOCAL STORAGE OPERATIONS (Replacement for Firestore) ---
+
+        function loadLocalTransactions() {
+            try {
+                const dataStr = localStorage.getItem(STORAGE_KEY);
+                if (dataStr) {
+                    localTransactions = JSON.parse(dataStr);
+                    // Ensure local IDs don't conflict with sheet IDs, though using timestamp is usually safe
+                    console.log(`Đã tải ${localTransactions.length} giao dịch từ LocalStorage.`);
+                } else {
+                    localTransactions = [];
+                }
+                updateAllTransactionsAndUI();
+            } catch (e) {
+                console.error("Lỗi đọc LocalStorage:", e);
+                showModal("Lỗi đọc dữ liệu từ trình duyệt.");
+            }
+        }
+
+        function saveLocalTransactionsToStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(localTransactions));
+            } catch (e) {
+                console.error("Lỗi lưu LocalStorage:", e);
+                showModal("Bộ nhớ trình duyệt đầy hoặc bị lỗi.");
+            }
+        }
+
+        function addTransactionLocally(newTransaction) {
+            // Generate a simple ID based on timestamp
+            const newId = `local-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+            
+            const transactionWithId = {
+                ...newTransaction,
+                id: newId,
+                createdAt: new Date().toISOString()
+            };
+
+            localTransactions.push(transactionWithId);
+            saveLocalTransactionsToStorage();
+            
+            console.log("Đã lưu giao dịch vào LocalStorage.");
+            updateAllTransactionsAndUI();
+            showModal("Đã lưu giao dịch thành công (Offline).");
+        }
+
+        window.deleteTransaction = (id) => {
+            if (typeof id === 'string' && id.startsWith('sheet-')) {
+                showModal("Không thể xóa dữ liệu từ Google Sheet.");
+                return;
+            }
+
+            if (confirm("Bạn có chắc chắn muốn xóa giao dịch này khỏi máy?")) {
+                const initialLength = localTransactions.length;
+                localTransactions = localTransactions.filter(tx => tx.id !== id);
+                
+                if (localTransactions.length < initialLength) {
+                    saveLocalTransactionsToStorage();
+                    updateAllTransactionsAndUI();
+                    console.log(`Đã xóa giao dịch ${id}`);
+                } else {
+                    showModal("Không tìm thấy giao dịch để xóa.");
+                }
+            }
+        };
+
+        // --- 4. EXPORT/IMPORT LOGIC (Updated for LocalStorage) ---
+
+        window.exportDataToJson = () => {
+            if (allTransactions.length === 0) {
+                showModal("Không có giao dịch nào để xuất.");
+                return;
+            }
+            
+            // Export ALL valid transactions (excluding Sheet data if desired, or include them)
+            // Here we export only what we can manage (Local) plus maybe Sheet data for backup? 
+            // Let's export only Local data for backup restore purposes mainly, 
+            // OR export EVERYTHING for analysis. Let's export Local Data mostly for restore.
+            const exportableData = localTransactions.map(tx => ({
+                type: tx.type,
+                amount: tx.amount,
+                category: tx.category,
+                predefinedCategory: tx.predefinedCategory,
+                date: tx.date,
+            }));
+            
+            if (exportableData.length === 0) {
+                showModal("Chưa có dữ liệu cục bộ nào để xuất.");
+                return;
+            }
+
+            const jsonString = JSON.stringify(exportableData, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `finance_local_backup_${new Date().toISOString().substring(0, 10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showModal(`Đã xuất ${exportableData.length} giao dịch cục bộ.`);
+        };
+
+        window.handleFileImport = (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (!Array.isArray(importedData)) {
+                        throw new Error("Format JSON không hợp lệ.");
+                    }
+                    
+                    const cleanTransactions = importedData.map(tx => ({
+                        type: tx.type === 'income' ? 'income' : 'expense',
+                        amount: parseFloat(tx.amount) || 0,
+                        category: tx.category || 'Nhập từ File',
+                        predefinedCategory: tx.predefinedCategory || (tx.type === 'income' ? 'Khác' : 'Lặt Vặt'),
+                        date: tx.date || new Date().toISOString().substring(0, 10),
+                        id: `local-imp-${Date.now()}-${Math.random().toString(36).substr(2, 5)}` // Generate new IDs
+                    })).filter(tx => tx.amount > 0);
+                    
+                    if (cleanTransactions.length === 0) {
+                         showModal("Không tìm thấy giao dịch hợp lệ.");
+                         return;
+                    }
+
+                    // Merge with existing local data
+                    localTransactions = [...localTransactions, ...cleanTransactions];
+                    saveLocalTransactionsToStorage();
+                    updateAllTransactionsAndUI();
+                    
+                    showModal(`Đã nhập thêm ${cleanTransactions.length} giao dịch vào bộ nhớ máy.`);
+
+                } catch (error) {
+                    console.error("Lỗi import:", error);
+                    showModal("Lỗi đọc file JSON.");
+                } finally {
+                    event.target.value = ''; 
+                }
+            };
+            reader.readAsText(file);
+        };
+
+        // --- 5. UI & DATA UPDATES ---
+
+        function updateAllTransactionsAndUI() {
+            // Merge Sheet (Read-only) + Local (Read/Write)
+            allTransactions = [...sheetTransactions, ...localTransactions];
+            
+            if (allTransactions.length === 0) {
+                 noTransactionText.style.display = 'block';
+                 noTransactionText.textContent = "Chưa có giao dịch nào.";
+            } else {
+                 noTransactionText.style.display = 'none';
+            }
+
+            updateMetricsAndCalculateTotals();
+            renderHistory();
+            updateBarChart();
+        }
+
+        function updateMetricsAndCalculateTotals() {
+            let totalIncome = 0;
+            let totalExpense = 0;
+
+            allTransactions.forEach(tx => {
+                if (tx.type === 'income') {
+                    totalIncome += tx.amount;
+                } else {
+                    totalExpense += tx.amount;
+                }
+            });
+
+            const balance = totalIncome - totalExpense;
+
+            balanceDisplay.textContent = formatCurrency(balance);
+            incomeDisplay.textContent = formatCurrency(totalIncome);
+            expenseDisplay.textContent = formatCurrency(totalExpense);
+            
+            balanceDisplay.className = 'text-3xl font-bold mt-2';
+            if (balance > 0) balanceDisplay.classList.add('text-emerald-600');
+            else if (balance < 0) balanceDisplay.classList.add('text-red-600');
+            else balanceDisplay.classList.add('text-slate-900');
+        }
+
+        function getExpenseCategoryTotals() {
+            const reportCategories = ['Ăn Uống', 'Chi Hàng Tháng', 'Đưa Vợ', 'Khác'];
+            const totals = reportCategories.reduce((acc, category) => {
+                acc[category] = 0;
+                return acc;
+            }, {}); 
+            const categoriesForOther = ['Mua Đồ Online', 'Đi Chơi', 'Phát Sinh', 'Lặt Vặt'];
+            
+            allTransactions.filter(tx => tx.type === 'expense').forEach(tx => {
+                const inputCategory = tx.predefinedCategory; 
+                if (!inputCategory) return; 
+                let reportingCategory = 'Khác'; 
+                if (['Ăn Sáng', 'Ăn Trưa', 'Ăn Chiều', 'Ăn Tối', 'Ăn Vặt'].includes(inputCategory)) {
+                    reportingCategory = 'Ăn Uống';
+                } else if (inputCategory === 'Chi Hàng Tháng') {
+                    reportingCategory = 'Chi Hàng Tháng';
+                } else if (inputCategory === 'Đưa Vợ') {
+                    reportingCategory = 'Đưa Vợ';
+                } else if (categoriesForOther.includes(inputCategory) || inputCategory === 'Khác') {
+                    reportingCategory = 'Khác'; 
+                }
+                if (totals.hasOwnProperty(reportingCategory)) totals[reportingCategory] += tx.amount;
+            });
+            return totals;
+        }
+
+        function updateBarChart() {
+            const categoryTotals = getExpenseCategoryTotals();
+            const filteredLabels = Object.keys(categoryTotals).filter(key => categoryTotals[key] > 0);
+            const filteredData = filteredLabels.map(key => categoryTotals[key]);
+            
+            if (financeChartInstance) financeChartInstance.destroy();
+            chartCanvas.clearRect(0, 0, chartCanvas.canvas.width, chartCanvas.canvas.height);
+            
+            if (filteredData.length === 0) {
+                // Draw placeholder
+                return;
+            }
+
+            financeChartInstance = new Chart(chartCanvas, {
+                type: 'bar',
+                data: {
+                    labels: filteredLabels,
+                    datasets: [{
+                        label: 'Tổng Chi Tiêu (VND)',
+                        data: filteredData,
+                        backgroundColor: 'rgba(239, 68, 68, 0.7)', 
+                        borderColor: 'rgba(239, 68, 68, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false, 
+                    indexAxis: 'y', 
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: { callback: (val) => new Intl.NumberFormat('vi-VN').format(val), font: { family: "'Inter', sans-serif" } }
+                        },
+                        y: { ticks: { font: { family: "'Inter', sans-serif" } } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function renderHistory() {
+            historyList.innerHTML = ''; 
+            // Sort Descending Date
+            const sortedTransactions = [...allTransactions].sort((a, b) => {
+                if (a.date < b.date) return -1;
+                if (a.date > b.date) return 1;
+                return 0;
+            });
+
+            let cumulativeBalance = 0;
+            const historyData = {}; 
+            
+            sortedTransactions.forEach(tx => {
+                const year = tx.date.substring(0, 4);
+                const month = tx.date.substring(5, 7);
+                const sign = tx.type === 'income' ? 1 : -1;
+                cumulativeBalance += tx.amount * sign; 
+                
+                const txWithBalance = { ...tx, runningBalance: cumulativeBalance };
+
+                if (!historyData[year]) historyData[year] = { months: {} };
+                if (!historyData[year].months[month]) historyData[year].months[month] = [];
+                historyData[year].months[month].push(txWithBalance);
+            });
+            
+            const sortedYears = Object.keys(historyData).sort((a, b) => b - a); 
+            const currentYear = new Date().getFullYear().toString();
+            const currentMonth = String(new Date().getMonth() + 1).padStart(2, '0'); 
+
+            sortedYears.forEach(year => {
+                const yearData = historyData[year];
+                const monthKeysDesc = Object.keys(yearData.months).sort((a, b) => b - a); 
+                
+                const lastTxOfYear = yearData.months[monthKeysDesc[0]].slice(-1)[0];
+                const yearEndBalance = lastTxOfYear ? lastTxOfYear.runningBalance : 0;
+                
+                const yearDetail = document.createElement('details');
+                yearDetail.className = 'mb-3 border border-slate-300 rounded-lg shadow-md';
+                yearDetail.open = (year === currentYear); 
+
+                const yearSummary = document.createElement('summary');
+                yearSummary.className = 'flex justify-between items-center p-3 cursor-pointer bg-slate-100 font-bold text-slate-800 hover:bg-slate-200 rounded-lg';
+                yearSummary.innerHTML = `
+                    <span>Năm ${year}</span>
+                    <span class="${yearEndBalance >= 0 ? 'text-emerald-700' : 'text-red-700'}">${formatCurrency(yearEndBalance)}</span>
+                `;
+                yearDetail.appendChild(yearSummary);
+
+                monthKeysDesc.forEach(monthKey => {
+                    const monthData = yearData.months[monthKey]; 
+                    const lastTxOfMonth = monthData.slice(-1)[0];
+                    const monthEndBalance = lastTxOfMonth ? lastTxOfMonth.runningBalance : 0;
+                    const monthName = new Date(year, monthKey - 1).toLocaleString('vi-VN', { month: 'long' });
+                    
+                    const monthDetail = document.createElement('details');
+                    monthDetail.className = 'border-t border-slate-200 bg-white';
+                    monthDetail.open = (year === currentYear && monthKey === currentMonth);
+
+                    const monthSummary = document.createElement('summary');
+                    monthSummary.className = 'flex justify-between items-center p-3 pl-8 cursor-pointer font-semibold text-slate-700 hover:bg-slate-50';
+                    monthSummary.innerHTML = `
+                        <span>${monthName} ${year}</span>
+                        <span class="${monthEndBalance >= 0 ? 'text-indigo-600' : 'text-red-600'} text-sm mr-4">Số dư: ${formatCurrency(monthEndBalance)}</span>
+                    `;
+                    monthDetail.appendChild(monthSummary);
+                    
+                    const monthTxContainer = document.createElement('div');
+                    monthTxContainer.className = 'px-4 pb-2 text-xs overflow-x-auto'; 
+                    monthTxContainer.innerHTML = `
+                        <div class="flex font-semibold text-slate-500 border-b pb-1 mb-1 mt-1 sticky top-0 bg-white z-10 min-w-[500px]">
+                            <span class="w-3/6">Mục</span>
+                            <span class="w-1/6 text-right">Chi/Thu</span>
+                            <span class="w-1/6 text-center">Ngày</span> 
+                            <span class="w-1/6 text-right">Số Dư</span>
+                            <span class="w-6 flex-shrink-0"></span> 
+                        </div>
+                    `;
+                    
+                    // Show transactions reversed (newest first in month)
+                    [...monthData].reverse().forEach(tx => { 
+                        const isSheet = tx.id.startsWith('sheet-');
+                        const item = document.createElement('div');
+                        item.className = `tx-line text-sm min-w-[500px] ${isSheet ? 'hover:bg-slate-50/50' : 'hover:bg-indigo-50/50'}`; 
+                        const sign = tx.type === 'income' ? '+' : '-';
+                        const amountColor = tx.type === 'income' ? 'text-emerald-600' : 'text-red-600';
+                        
+                        let deleteButton;
+                        if (isSheet) {
+                             deleteButton = `<span class="w-6 flex-shrink-0 text-slate-400 text-xs text-center font-bold" title="Google Sheet (Chỉ xem)">S</span>`;
+                        } else {
+                             // Use 'L' for Local
+                             deleteButton = `<button class="delete-btn" onclick="deleteTransaction('${tx.id}')" title="Xóa (Local)">L</button>`;
+                        }
+                        
+                        item.innerHTML = `
+                            <span class="w-3/6 font-medium text-slate-800 truncate pr-2">${tx.category}</span>
+                            <span class="w-1/6 text-right font-bold ${amountColor}">${sign} ${formatCurrency(tx.amount)}</span>
+                            <span class="w-1/6 text-center text-slate-500">${formatDisplayedDate(tx.date)}</span> 
+                            <span class="w-1/6 text-right font-semibold text-slate-700">${formatCurrency(tx.runningBalance)}</span>
+                            ${deleteButton}
+                        `;
+                        monthTxContainer.appendChild(item);
+                    });
+                    monthDetail.appendChild(monthTxContainer);
+                    yearDetail.appendChild(monthDetail);
+                });
+                historyList.appendChild(yearDetail);
+            });
+        }
+
+        // --- 6. FORM & INIT ---
+        const incomeCategories = ['Lương', 'Khác']; 
+        const expenseCategories = ['Ăn Sáng', 'Ăn Trưa', 'Ăn Chiều', 'Ăn Tối', 'Ăn Vặt', 'Mua Đồ Online', 'Chi Hàng Tháng', 'Đưa Vợ', 'Đi Chơi', 'Phát Sinh', 'Lặt Vặt'];
+        const descriptionContainer = document.getElementById('descriptionContainer');
+        const amountInput = document.getElementById('amountInput');
+        const dateInput = document.getElementById('dateInput');
+        const customDescriptionInput = document.getElementById('customDescriptionInput'); 
+        const typeSelector = document.getElementById('typeSelector');
+
+        function setDefaultDate() {
+            const today = new Date();
+            dateInput.value = today.toISOString().split('T')[0];
+        }
+
+        function createCategoryField(items, labelText) {
+            const optionsHtml = items.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+            descriptionContainer.innerHTML = `
+                <label for="categoryInput" class="block text-sm font-medium text-slate-700">${labelText}</label>
+                <select id="categoryInput" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                    ${optionsHtml}
+                </select>
+            `;
+        }
+
+        function updateCategoryField() {
+            const type = document.querySelector('input[name="type"]:checked').value;
+            if (type === 'income') createCategoryField(incomeCategories, 'Danh Mục Thu Nhập');
+            else createCategoryField(expenseCategories, 'Danh Mục Chi Tiêu');
+        }
+        
+        typeSelector.addEventListener('change', updateCategoryField);
+
+        transactionForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const amount = parseFloat(amountInput.value);
+            if (isNaN(amount) || amount <= 0) { showModal("Số tiền phải > 0"); return; }
+            
+            const type = document.querySelector('input[name="type"]:checked').value;
+            const categoryInput = document.getElementById('categoryInput');
+            const selectedDate = dateInput.value;
+            const customDescription = customDescriptionInput.value.trim();
+            const selectedPredefinedCategory = categoryInput ? categoryInput.value : '';
+            const displayDescription = customDescription || selectedPredefinedCategory;
+            
+            if (!displayDescription || !selectedDate) { showModal("Vui lòng điền đầy đủ thông tin."); return; }
+
+            const newTransaction = {
+                type,
+                amount,
+                category: displayDescription,         
+                predefinedCategory: selectedPredefinedCategory, 
+                date: selectedDate,
+            };
+            
+            addTransactionLocally(newTransaction);
+            
+            // Reset
+            transactionForm.reset();
+            document.querySelector('input[name="type"][value="expense"]').checked = true;
+            updateCategoryField();
+            setDefaultDate();
+        });
+
+        async function initFinanceApp() { 
+            // 1. Tải Google Sheet (Async - không chặn UI)
+            await fetchSheetData();
+            // 2. Tải Local Storage
+            loadLocalTransactions();
+            
+            // 3. UI Init
+            setDefaultDate(); 
+            updateCategoryField();
+        }
+        
+        initFinanceApp();
     </script>
 </body>
 </html>
