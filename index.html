@@ -1,139 +1,201 @@
-<!-- Chosen Palette: Calm Neutrals (Tailwind Slate) with Indigo (Income) and Red (Expense) accents. -->
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản Lý Thu Chi Cá Nhân</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Quản Lý Thu Chi</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f1f5f9;
+            background-color: #f8fafc;
+            padding-bottom: 80px; /* Space for bottom nav */
         }
-        .metric-card {
-            background-color: white;
-            border-radius: 0.75rem;
-            padding: 1.25rem; 
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-            transition: transform 0.2s;
+        .nav-item.active {
+            color: #4f46e5; /* Indigo 600 */
         }
-        .metric-card:hover { transform: translateY(-2px); }
-        .delete-btn {
-            background-color: #fee2e2; color: #b91c1c; border: none; border-radius: 0.5rem; 
-            width: 32px; height: 32px; line-height: 32px; font-weight: 700; font-size: 12px;
-            cursor: pointer; transition: all 0.2s; text-align: center; display: flex; align-items: center; justify-content: center;
+        .nav-item.active svg {
+            fill: #4f46e5;
         }
-        .delete-btn:hover { background-color: #fecaca; color: #991b1b; }
-        .chart-container { position: relative; width: 100%; height: 300px; margin: auto; }
-        @media (min-width: 768px) { .chart-container { height: 400px; } }
+        .safe-area-bottom {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
     </style>
 </head>
-<body class="p-3 md:p-8">
-    <div class="max-w-6xl mx-auto">
-        <header class="text-center mb-6 md:mb-8">
-            <h1 class="text-2xl md:text-4xl font-bold text-slate-800">Quản Lý Thu Chi</h1>
-        </header>
-
-        <!-- Metrics -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
-            <div class="metric-card flex flex-row md:flex-col justify-between items-center md:items-start">
-                <h2 class="text-xs md:text-sm font-medium text-slate-500 uppercase">Số Dư Hiện Tại</h2>
-                <p id="balanceDisplay" class="text-2xl md:text-3xl font-bold text-slate-900 mt-0 md:mt-2">0 ₫</p>
-            </div>
-            <div class="metric-card flex flex-row md:flex-col justify-between items-center md:items-start">
-                <h2 class="text-xs md:text-sm font-medium text-slate-500 uppercase">Tổng Thu</h2>
-                <p id="incomeDisplay" class="text-2xl md:text-3xl font-bold text-emerald-600 mt-0 md:mt-2">0 ₫</p>
-            </div>
-            <div class="metric-card flex flex-row md:flex-col justify-between items-center md:items-start">
-                <h2 class="text-xs md:text-sm font-medium text-slate-500 uppercase">Chi Tháng Này</h2>
-                <p id="expenseDisplay" class="text-2xl md:text-3xl font-bold text-red-600 mt-0 md:mt-2">0 ₫</p>
-            </div>
+<body>
+    <!-- Top Header -->
+    <header class="bg-white border-b sticky top-0 z-40 px-4 py-3">
+        <div class="flex justify-between items-center max-w-lg mx-auto">
+            <h1 id="pageTitle" class="text-xl font-bold text-slate-800">Trang Chủ</h1>
+            <div id="currentMonthDisplay" class="text-sm font-medium text-slate-500">Tháng --, ----</div>
         </div>
+    </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 mb-6 md:mb-8">
-            <!-- Form -->
-            <div class="bg-white p-5 rounded-lg shadow-lg flex flex-col order-2 lg:order-1">
-                <h2 class="text-xl md:text-2xl font-bold text-slate-800 mb-4">Thêm Giao Dịch Mới</h2>
-                <form id="transactionForm" class="flex flex-col flex-grow">
-                    <fieldset class="mb-4" id="typeSelector">
-                        <legend class="block text-sm font-medium text-slate-700 mb-2">Loại giao dịch</legend>
-                        <div class="grid grid-cols-2 gap-4">
-                            <label class="flex items-center justify-center border rounded-md p-3 cursor-pointer hover:bg-emerald-50 has-[:checked]:bg-emerald-50 has-[:checked]:border-emerald-500 transition">
-                                <input type="radio" name="type" value="income" class="h-4 w-4 text-emerald-600 border-gray-300 focus:ring-emerald-500 mr-2">
-                                <span class="text-sm font-medium text-slate-900">Thu Nhập</span>
-                            </label>
-                            <label class="flex items-center justify-center border rounded-md p-3 cursor-pointer hover:bg-red-50 has-[:checked]:bg-red-50 has-[:checked]:border-red-500 transition">
-                                <input type="radio" name="type" value="expense" class="h-4 w-4 text-red-600 border-gray-300 focus:ring-red-500 mr-2" checked>
-                                <span class="text-sm font-medium text-slate-900">Chi Tiêu</span>
-                            </label>
+    <main class="max-w-lg mx-auto px-4 py-6">
+        
+        <!-- TAB 1: TRANG CHỦ -->
+        <section id="tab-home" class="tab-content active space-y-6">
+            <!-- Quick Stats -->
+            <div class="grid grid-cols-1 gap-4">
+                <div class="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-2xl p-6 text-white shadow-lg shadow-indigo-200">
+                    <p class="text-indigo-100 text-sm font-medium opacity-80">Số dư hiện tại</p>
+                    <h2 id="balanceDisplay" class="text-3xl font-bold mt-1">0 ₫</h2>
+                    <div class="flex justify-between mt-6 pt-4 border-t border-indigo-400/30">
+                        <div>
+                            <p class="text-xs text-indigo-100 opacity-70">Tổng thu</p>
+                            <p id="incomeDisplay" class="font-semibold">+ 0 ₫</p>
                         </div>
-                    </fieldset>
+                        <div class="text-right">
+                            <p class="text-xs text-indigo-100 opacity-70">Chi tháng này</p>
+                            <p id="expenseDisplay" class="font-semibold">- 0 ₫</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                    <div class="mb-4" id="descriptionContainer"></div>
-
-                    <div class="mb-4">
-                        <label for="amountInput" class="block text-sm font-medium text-slate-700">Số Tiền (VND)</label>
-                        <input type="number" id="amountInput" inputmode="numeric" pattern="[0-9]*" min="1" placeholder="Ví dụ: 50000" class="block w-full px-4 py-3 bg-white border border-slate-300 rounded-md text-base focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" required>
+            <!-- Add Transaction Form -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+                <h3 class="font-bold text-slate-800 mb-4">Thêm giao dịch</h3>
+                <form id="transactionForm" class="space-y-4">
+                    <div class="flex p-1 bg-slate-100 rounded-xl">
+                        <label class="flex-1 text-center py-2 rounded-lg cursor-pointer transition has-[:checked]:bg-white has-[:checked]:shadow-sm has-[:checked]:text-emerald-600 font-medium text-slate-500">
+                            <input type="radio" name="type" value="income" class="hidden" onchange="updateCats()"> Thu nhập
+                        </label>
+                        <label class="flex-1 text-center py-2 rounded-lg cursor-pointer transition has-[:checked]:bg-white has-[:checked]:shadow-sm has-[:checked]:text-red-600 font-medium text-slate-500">
+                            <input type="radio" name="type" value="expense" class="hidden" checked onchange="updateCats()"> Chi tiêu
+                        </label>
                     </div>
 
-                    <div class="mb-4">
-                        <label for="dateInput" class="block text-sm font-medium text-slate-700">Ngày Giao Dịch</label>
-                        <input type="date" id="dateInput" class="mt-1 block w-full px-4 py-3 bg-white border border-slate-300 rounded-md text-base shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" required>
+                    <div id="descriptionContainer"></div>
+
+                    <div>
+                        <label class="text-xs font-semibold text-slate-400 uppercase ml-1">Số tiền</label>
+                        <input type="number" id="amountInput" inputmode="numeric" placeholder="0" class="w-full bg-slate-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 font-bold text-lg" required>
                     </div>
 
-                    <div class="mb-6">
-                        <label for="customDescriptionInput" class="block text-sm font-medium text-slate-700">Mô Tả Tùy Chỉnh (Tùy chọn)</label>
-                        <input type="text" id="customDescriptionInput" placeholder="Ví dụ: Cà phê sáng..." class="mt-1 block w-full px-4 py-3 bg-white border border-slate-300 rounded-md text-base shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-xs font-semibold text-slate-400 uppercase ml-1">Ngày</label>
+                            <input type="date" id="dateInput" class="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500" required>
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-slate-400 uppercase ml-1">Ghi chú</label>
+                            <input type="text" id="customDescriptionInput" placeholder="..." class="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500">
+                        </div>
                     </div>
-                    
-                    <button type="submit" id="submitButton" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-4 rounded-lg shadow-md transition duration-300 text-base">
-                        Lưu Giao Dịch
+
+                    <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-100 active:scale-95 transition">
+                        Lưu giao dịch
                     </button>
                 </form>
             </div>
-            
-            <!-- Chart -->
-            <div class="bg-white p-5 rounded-lg shadow-lg flex flex-col order-1 lg:order-2">
-                <h2 class="text-xl md:text-2xl font-bold text-slate-800 mb-4">Phân Tích Chi Tiêu</h2>
-                <p class="text-slate-600 mb-2 text-sm">Phân bổ chi tiêu tháng này.</p>
-                <div class="chart-container">
-                    <canvas id="financeChart"></canvas>
+
+            <!-- Summary History for Home Page -->
+            <div class="space-y-4">
+                <div class="flex items-center justify-between px-1">
+                    <h3 class="font-bold text-slate-800">Lịch sử tháng này</h3>
+                    <button onclick="switchTab('history', 'Lịch Sử')" class="text-xs font-bold text-indigo-600 uppercase tracking-wider">Xem tất cả</button>
+                </div>
+                <div id="homeHistoryList" class="space-y-3">
+                    <!-- JS renders summarized history here -->
                 </div>
             </div>
-        </div>
+        </section>
 
-        <!-- History -->
-        <div class="bg-white p-5 rounded-lg shadow-lg mb-20">
-            <h2 class="text-xl md:text-2xl font-bold text-slate-800 mb-4">Lịch Sử Giao Dịch</h2>
-            <div id="historyList" class="space-y-3">
-                <p id="noTransactionText" class="text-slate-500 text-center py-8">Đang tải dữ liệu...</p>
-            </div>
-        </div>
-        
-        <!-- Footer actions -->
-        <div class="mt-8 mb-8 p-4 text-center bg-slate-50 rounded-lg shadow-inner border border-slate-200">
-            <div class="flex flex-col sm:flex-row justify-center gap-3 mb-4">
-                <input type="file" id="importFileInput" accept=".json" class="hidden" onchange="window.handleFileImport(event)">
-                <button onclick="window.exportDataToJson()" class="w-full sm:w-auto bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold py-3 px-6 rounded-lg shadow-sm transition text-sm flex items-center justify-center">
-                    Sao Lưu (JSON)
-                </button>
-                <button onclick="document.getElementById('importFileInput').click()" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition text-sm flex items-center justify-center">
-                    Khôi Phục (JSON)
-                </button>
-            </div>
-            <p class="text-slate-500 text-xs">Dữ liệu lưu tại trình duyệt này.</p>
-        </div>
-    </div>
+        <!-- TAB 2: PHÂN TÍCH -->
+        <section id="tab-analysis" class="tab-content space-y-6">
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-slate-800">Báo cáo chi tiêu</h3>
+                    <input type="month" id="analysisMonthPicker" class="text-sm bg-slate-50 border-none rounded-lg p-1 px-2 focus:ring-indigo-500" onchange="updateAnalysis()">
+                </div>
+                
+                <div class="chart-container h-64 mb-6">
+                    <canvas id="financeChart"></canvas>
+                </div>
 
-    <!-- Modal -->
-    <div id="statusModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden items-center justify-center p-4 z-50">
-        <div class="bg-white p-6 rounded-xl shadow-2xl max-w-xs w-full text-center">
-            <h3 class="text-lg font-medium text-slate-900 mb-2">Thông báo</h3>
-            <p id="modalMessage" class="text-sm text-slate-500"></p>
-            <button onclick="document.getElementById('statusModal').classList.add('hidden')" class="mt-5 w-full py-2 bg-indigo-600 text-white rounded-md">Đóng</button>
+                <div id="analysisEmptyState" class="hidden text-center py-10 text-slate-400 italic">Không có dữ liệu chi tiêu trong tháng này.</div>
+                
+                <div id="analysisDetails" class="space-y-3 pt-4 border-t border-slate-50">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Chi tiết từng mục</h4>
+                    <div id="categorySummaryList" class="space-y-2"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: LỊCH SỬ -->
+        <section id="tab-history" class="tab-content space-y-4">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="font-bold text-slate-800">Tất cả lịch sử</h3>
+            </div>
+            <div id="historyList" class="space-y-4"></div>
+        </section>
+
+        <!-- TAB 4: CÀI ĐẶT -->
+        <section id="tab-settings" class="tab-content space-y-6">
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+                <h3 class="font-bold text-slate-800 mb-6">Dữ liệu & Bảo mật</h3>
+                <div class="space-y-4">
+                    <button onclick="window.exportDataToJson()" class="w-full flex items-center justify-between p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 bg-blue-100 text-blue-600 rounded-lg">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            </div>
+                            <span class="font-medium text-slate-700">Sao lưu dữ liệu (JSON)</span>
+                        </div>
+                    </button>
+
+                    <input type="file" id="importFileInput" accept=".json" class="hidden" onchange="window.handleFileImport(event)">
+                    <button onclick="document.getElementById('importFileInput').click()" class="w-full flex items-center justify-between p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 bg-emerald-100 text-emerald-600 rounded-lg">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                            </div>
+                            <span class="font-medium text-slate-700">Khôi phục dữ liệu (JSON)</span>
+                        </div>
+                    </button>
+                </div>
+                <p class="mt-8 text-center text-xs text-slate-400 italic">Phiên bản v2.2 - Home History Summary</p>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t safe-area-bottom z-50 shadow-[0_-4px_10px_rgba(0,0,0,0.03)]">
+        <div class="max-w-lg mx-auto flex justify-around py-3">
+            <button onclick="switchTab('home', 'Trang Chủ')" class="nav-item active flex flex-col items-center gap-1 w-full" id="btn-home">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <span class="text-[10px] font-bold uppercase tracking-wider">Trang chủ</span>
+            </button>
+            <button onclick="switchTab('analysis', 'Phân Tích')" class="nav-item flex flex-col items-center gap-1 w-full" id="btn-analysis">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                <span class="text-[10px] font-bold uppercase tracking-wider">Phân tích</span>
+            </button>
+            <button onclick="switchTab('history', 'Lịch Sử')" class="nav-item flex flex-col items-center gap-1 w-full" id="btn-history">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>
+                <span class="text-[10px] font-bold uppercase tracking-wider">Lịch sử</span>
+            </button>
+            <button onclick="switchTab('settings', 'Cài Đặt')" class="nav-item flex flex-col items-center gap-1 w-full" id="btn-settings">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                <span class="text-[10px] font-bold uppercase tracking-wider">Cài đặt</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Modal Status -->
+    <div id="statusModal" class="fixed inset-0 bg-black bg-opacity-40 hidden items-center justify-center p-6 z-[100]">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-xs text-center">
+            <p id="modalMessage" class="text-slate-700 mb-6 font-medium"></p>
+            <button onclick="document.getElementById('statusModal').classList.add('hidden')" class="w-full bg-slate-900 text-white py-3 rounded-xl font-bold">OK</button>
         </div>
     </div>
 
@@ -144,17 +206,26 @@
         let allTransactions = []; 
         let financeChartInstance = null;
 
-        const balanceDisplay = document.getElementById('balanceDisplay');
-        const incomeDisplay = document.getElementById('incomeDisplay');
-        const expenseDisplay = document.getElementById('expenseDisplay');
-        const historyList = document.getElementById('historyList');
-        const noTransactionText = document.getElementById('noTransactionText');
-        const chartCanvas = document.getElementById('financeChart').getContext('2d');
-        const transactionForm = document.getElementById('transactionForm');
-
         const SHEET_ID = '1Fs72QcxZIFgYbL62wTvmUgGG9OeEiV_B';
         const GID = '0'; 
         const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}`;
+
+        const COLORS = ['#ef4444', '#f59e0b', '#6366f1', '#10b981', '#94a3b8', '#ec4899', '#8b5cf6'];
+
+        function switchTab(tabId, title) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            document.getElementById(`btn-${tabId}`).classList.add('active');
+            document.getElementById('pageTitle').textContent = title;
+            if (tabId === 'analysis') updateAnalysis();
+            if (tabId === 'home') updateUI();
+            window.scrollTo(0, 0);
+        }
+
+        function formatCurrency(val) {
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
+        }
 
         function showModal(msg) {
             document.getElementById('modalMessage').textContent = msg;
@@ -162,19 +233,17 @@
             document.getElementById('statusModal').classList.add('flex');
         }
 
-        function formatCurrency(val) {
-            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
-        }
-
-        function parseSheetData(jsonString) {
-            const sheetData = [];
+        async function fetchSheetData() {
             try {
-                const match = jsonString.match(/google\.visualization\.Query\.setResponse\(([^;]+)\);/);
-                let data = match ? JSON.parse(match[1]).table : null;
+                const res = await fetch(SHEET_URL);
+                const text = await res.text();
+                const match = text.match(/google\.visualization\.Query\.setResponse\(([^;]+)\);/);
+                const data = match ? JSON.parse(match[1]).table : null;
+                const temp = [];
                 if (data && data.rows) {
                     for (let i = 1; i < data.rows.length; i++) {
                         const c = data.rows[i].c;
-                        if (!c[0] || !c[1] || !c[3] || c[3].v === null) continue; 
+                        if (!c[0] || !c[1] || !c[3] || c[3].v === null) continue;
                         let dStr = '';
                         if (c[0].f) {
                             const f = String(c[0].f).trim();
@@ -184,7 +253,7 @@
                             } else if (f.length === 10 && f.includes('-')) dStr = f;
                         }
                         if (dStr.length !== 10) continue;
-                        sheetData.push({
+                        temp.push({
                             id: `sheet-${i}`, type: (String(c[1].v).toLowerCase().trim() === 'thu' ? 'income' : 'expense'),
                             amount: parseFloat(c[3].v),
                             category: (c[4] && c[4].v ? String(c[4].v) : (c[2] && c[2].v ? String(c[2].v) : 'Khác')).trim(),
@@ -193,16 +262,8 @@
                         });
                     }
                 }
-            } catch (e) { console.error(e); }
-            return sheetData;
-        }
-
-        async function fetchSheetData() {
-            try {
-                const res = await fetch(SHEET_URL);
-                const text = await res.text();
-                sheetTransactions = parseSheetData(text);
-            } catch (e) { sheetTransactions = []; }
+                sheetTransactions = temp;
+            } catch (e) { console.error("Sheet Load Error", e); }
         }
 
         function loadLocal() {
@@ -212,14 +273,12 @@
 
         function updateUI() {
             allTransactions = [...sheetTransactions, ...localTransactions];
-            noTransactionText.style.display = allTransactions.length === 0 ? 'block' : 'none';
-            
-            // Calc metrics
             const now = new Date();
             const curM = String(now.getMonth() + 1).padStart(2, '0');
             const curY = String(now.getFullYear());
-            let tIn = 0, tEx = 0, curMEx = 0;
+            document.getElementById('currentMonthDisplay').textContent = `Tháng ${curM}, ${curY}`;
 
+            let tIn = 0, tEx = 0, curMEx = 0;
             allTransactions.forEach(tx => {
                 if (tx.type === 'income') tIn += tx.amount;
                 else {
@@ -228,73 +287,176 @@
                 }
             });
 
-            balanceDisplay.textContent = formatCurrency(tIn - tEx);
-            incomeDisplay.textContent = formatCurrency(tIn);
-            expenseDisplay.textContent = formatCurrency(curMEx);
-            balanceDisplay.className = `text-2xl md:text-3xl font-bold mt-2 ${(tIn-tEx) >= 0 ? 'text-emerald-600' : 'text-red-600'}`;
+            document.getElementById('balanceDisplay').textContent = formatCurrency(tIn - tEx);
+            document.getElementById('incomeDisplay').textContent = `+ ${formatCurrency(tIn)}`;
+            document.getElementById('expenseDisplay').textContent = `- ${formatCurrency(curMEx)}`;
             
             renderHistory();
-            renderChart(curY, curM);
+            renderHomeHistory(); // Render simplified history for Home
+            if (document.getElementById('tab-analysis').classList.contains('active')) updateAnalysis();
         }
 
-        function renderChart(curY, curM) {
+        function renderHomeHistory() {
+            const list = document.getElementById('homeHistoryList');
+            const now = new Date();
+            const todayStr = now.toISOString().split('T')[0];
+            const curMonthStr = todayStr.substring(0, 7);
+
+            // Filter for current month only
+            const monthTxs = allTransactions.filter(tx => tx.date.startsWith(curMonthStr));
+            const sorted = [...monthTxs].sort((a, b) => b.date.localeCompare(a.date));
+
+            if (sorted.length === 0) {
+                list.innerHTML = '<div class="text-center py-6 text-slate-400 text-sm italic">Tháng này chưa có giao dịch.</div>';
+                return;
+            }
+
+            list.innerHTML = '';
+            let processedDates = new Set();
+
+            sorted.forEach(tx => {
+                if (tx.date === todayStr) {
+                    // Detail for TODAY
+                    const item = document.createElement('div');
+                    item.className = "bg-white p-3 rounded-xl shadow-sm border border-slate-50 flex items-center justify-between";
+                    item.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg flex items-center justify-center ${tx.type === 'income' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}">
+                                <span class="text-[10px] font-bold uppercase">${tx.type === 'income' ? 'THU' : 'CHI'}</span>
+                            </div>
+                            <div>
+                                <p class="font-bold text-slate-800 text-xs">${tx.category}</p>
+                                <p class="text-[9px] text-slate-400 font-medium">Hôm nay</p>
+                            </div>
+                        </div>
+                        <span class="font-bold text-sm ${tx.type === 'income' ? 'text-emerald-600' : 'text-slate-800'}">
+                            ${tx.type === 'income' ? '+' : ''}${formatCurrency(tx.amount).replace('₫', '').trim()}
+                        </span>
+                    `;
+                    list.appendChild(item);
+                } else {
+                    // Summary for previous days in month
+                    if (!processedDates.has(tx.date)) {
+                        const dayTxs = monthTxs.filter(t => t.date === tx.date);
+                        let dayNet = 0;
+                        dayTxs.forEach(t => dayNet += (t.type === 'income' ? t.amount : -t.amount));
+                        
+                        const dateObj = new Date(tx.date);
+                        const displayDate = dateObj.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+
+                        const summaryItem = document.createElement('div');
+                        summaryItem.className = "bg-slate-50 p-3 rounded-xl flex items-center justify-between border border-transparent";
+                        summaryItem.innerHTML = `
+                            <span class="text-xs font-bold text-slate-500">${displayDate}</span>
+                            <div class="text-right">
+                                <span class="text-xs font-bold ${dayNet >= 0 ? 'text-emerald-600' : 'text-slate-400'}">
+                                    ${dayNet >= 0 ? '+' : ''}${formatCurrency(Math.abs(dayNet)).replace('₫', '').trim()}
+                                </span>
+                            </div>
+                        `;
+                        list.appendChild(summaryItem);
+                        processedDates.add(tx.date);
+                    }
+                }
+            });
+        }
+
+        function updateAnalysis() {
+            const picker = document.getElementById('analysisMonthPicker');
+            if (!picker.value) {
+                const now = new Date();
+                picker.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+            }
+            const [y, m] = picker.value.split('-');
             const totals = {'Ăn Uống': 0, 'Chi Hàng Tháng': 0, 'Đưa Vợ': 0, 'Khác': 0};
-            allTransactions.filter(tx => tx.type === 'expense' && tx.date.startsWith(`${curY}-${curM}`)).forEach(tx => {
+            allTransactions.filter(tx => tx.type === 'expense' && tx.date.startsWith(`${y}-${m}`)).forEach(tx => {
                 let cat = 'Khác';
                 if (['Ăn Sáng', 'Ăn Trưa', 'Ăn Chiều', 'Ăn Tối', 'Ăn Vặt'].includes(tx.predefinedCategory)) cat = 'Ăn Uống';
                 else if (['Chi Hàng Tháng', 'Đưa Vợ'].includes(tx.predefinedCategory)) cat = tx.predefinedCategory;
                 if (totals.hasOwnProperty(cat)) totals[cat] += tx.amount;
+                else totals['Khác'] += tx.amount;
             });
+
             const labels = Object.keys(totals).filter(k => totals[k] > 0);
             const data = labels.map(k => totals[k]);
+            const totalSum = data.reduce((a, b) => a + b, 0);
+            const summaryList = document.getElementById('categorySummaryList');
+
+            if (data.length === 0) {
+                document.getElementById('analysisEmptyState').classList.remove('hidden');
+                document.getElementById('financeChart').classList.add('hidden');
+                document.getElementById('analysisDetails').classList.add('hidden');
+                if (financeChartInstance) financeChartInstance.destroy();
+                return;
+            }
+
+            document.getElementById('analysisEmptyState').classList.add('hidden');
+            document.getElementById('financeChart').classList.remove('hidden');
+            document.getElementById('analysisDetails').classList.remove('hidden');
+
+            summaryList.innerHTML = '';
+            labels.forEach((label, index) => {
+                const amount = totals[label];
+                const percent = ((amount / totalSum) * 100).toFixed(1);
+                const item = document.createElement('div');
+                item.className = "flex items-center justify-between p-3 bg-slate-50 rounded-xl";
+                item.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-2 h-8 rounded-full" style="background-color: ${COLORS[index % COLORS.length]}"></div>
+                        <div>
+                            <p class="text-sm font-bold text-slate-700">${label}</p>
+                            <p class="text-[10px] text-slate-400 font-medium">${percent}% tổng chi</p>
+                        </div>
+                    </div>
+                    <p class="font-bold text-slate-800 text-sm">${formatCurrency(amount)}</p>
+                `;
+                summaryList.appendChild(item);
+            });
 
             if (financeChartInstance) financeChartInstance.destroy();
-            if (data.length === 0) return;
-            financeChartInstance = new Chart(chartCanvas, {
-                type: 'bar', data: { labels, datasets: [{ data, backgroundColor: 'rgba(239,68,68,0.7)', borderRadius: 4 }] },
-                options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } } }
+            financeChartInstance = new Chart(document.getElementById('financeChart'), {
+                type: 'doughnut',
+                data: { labels, datasets: [{ data, backgroundColor: COLORS, borderWidth: 0, hoverOffset: 10 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '70%' }
             });
         }
 
         function renderHistory() {
-            historyList.innerHTML = '';
-            const sorted = [...allTransactions].sort((a, b) => a.date.localeCompare(b.date));
-            let balance = 0;
-            const groups = {};
+            const list = document.getElementById('historyList');
+            list.innerHTML = '';
+            const sorted = [...allTransactions].sort((a, b) => b.date.localeCompare(a.date));
+            if (sorted.length === 0) {
+                list.innerHTML = '<div class="text-center py-10 text-slate-400">Chưa có giao dịch nào.</div>';
+                return;
+            }
+            let lastDate = "";
             sorted.forEach(tx => {
-                balance += tx.amount * (tx.type === 'income' ? 1 : -1);
-                const [y, m] = tx.date.split('-');
-                if (!groups[y]) groups[y] = {};
-                if (!groups[y][m]) groups[y][m] = [];
-                groups[y][m].push({ ...tx, runningBalance: balance });
-            });
-
-            Object.keys(groups).sort((a, b) => b - a).forEach(y => {
-                const yDet = document.createElement('details');
-                yDet.className = 'mb-3 bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden';
-                yDet.open = (y === new Date().getFullYear().toString());
-                const mKeys = Object.keys(groups[y]).sort((a, b) => b - a);
-                yDet.innerHTML = `<summary class="flex justify-between p-3 font-bold bg-slate-50">Năm ${y} <span>${formatCurrency(groups[y][mKeys[0]].slice(-1)[0].runningBalance)}</span></summary>`;
-                
-                mKeys.forEach(m => {
-                    const mDet = document.createElement('details');
-                    mDet.className = 'border-t border-slate-100';
-                    mDet.open = (yDet.open && m === String(new Date().getMonth() + 1).padStart(2, '0'));
-                    mDet.innerHTML = `<summary class="flex justify-between p-3 pl-6 text-sm font-semibold">Tháng ${m} <span>Dư: ${formatCurrency(groups[y][m].slice(-1)[0].runningBalance)}</span></summary>`;
-                    const cont = document.createElement('div');
-                    cont.className = 'px-4 pb-2';
-                    [...groups[y][m]].reverse().forEach(tx => {
-                        const row = document.createElement('div');
-                        row.className = 'flex justify-between items-center py-3 border-b last:border-0';
-                        row.innerHTML = `<div class="flex flex-col text-sm"><b>${tx.category}</b><small class="text-slate-400">${tx.date.split('-').reverse().slice(0,2).join('/')}</small></div>
-                                         <div class="text-right flex flex-col"><b class="${tx.type==='income'?'text-emerald-600':'text-red-600'}">${tx.type==='income'?'+':'-'} ${formatCurrency(tx.amount)}</b><small class="text-[10px] text-slate-400">Dư: ${formatCurrency(tx.runningBalance)}</small></div>
-                                         ${tx.id.startsWith('sheet-')?'':`<button onclick="delTx('${tx.id}')" class="delete-btn ml-2">×</button>`}`;
-                        cont.appendChild(row);
-                    });
-                    mDet.appendChild(cont);
-                    yDet.appendChild(mDet);
-                });
-                historyList.appendChild(yDet);
+                if (tx.date !== lastDate) {
+                    const dateHeader = document.createElement('div');
+                    dateHeader.className = "text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-4 mb-2 ml-1";
+                    const d = new Date(tx.date);
+                    dateHeader.textContent = d.toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long' });
+                    list.appendChild(dateHeader);
+                    lastDate = tx.date;
+                }
+                const item = document.createElement('div');
+                item.className = "bg-white p-4 rounded-xl shadow-sm flex items-center justify-between border border-slate-50";
+                item.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center ${tx.type === 'income' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}">
+                            ${tx.type === 'income' ? '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5"/></svg>' : '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 14l-5-5-5 5"/></svg>'}
+                        </div>
+                        <div>
+                            <p class="font-bold text-slate-800 text-sm">${tx.category}</p>
+                            <p class="text-[10px] text-slate-400 font-medium">${tx.type === 'income' ? 'Thu nhập' : 'Chi tiêu'}</p>
+                        </div>
+                    </div>
+                    <div class="text-right flex items-center gap-3">
+                        <span class="font-bold ${tx.type === 'income' ? 'text-emerald-600' : 'text-slate-800'}">${tx.type === 'income' ? '+' : ''}${formatCurrency(tx.amount).replace('₫', '').trim()}</span>
+                        ${tx.id.startsWith('local-') ? `<button onclick="delTx('${tx.id}')" class="text-slate-300 hover:text-red-500"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>` : ''}
+                    </div>
+                `;
+                list.appendChild(item);
             });
         }
 
@@ -306,82 +468,63 @@
             }
         };
 
-        // --- FIXED EXPORT ---
         window.exportDataToJson = () => {
-            // Export ALL transactions currently visible, but formatted cleanly
-            const dataToExport = allTransactions.map(tx => ({
-                type: tx.type,
-                amount: tx.amount,
-                category: tx.category,
-                predefinedCategory: tx.predefinedCategory,
-                date: tx.date
-            }));
-
-            if (dataToExport.length === 0) {
-                showModal("Không có dữ liệu để sao lưu.");
-                return;
-            }
-
-            try {
-                const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `quan_ly_thu_chi_${new Date().toISOString().slice(0,10)}.json`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            } catch (e) {
-                showModal("Lỗi khi tạo file sao lưu.");
-            }
+            const data = allTransactions.map(({id, ...rest}) => rest);
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = `finance_backup_${new Date().toISOString().slice(0,10)}.json`; a.click();
+            URL.revokeObjectURL(url);
         };
 
         window.handleFileImport = (e) => {
             const file = e.target.files[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = (event) => {
+            reader.onload = (ev) => {
                 try {
-                    const data = JSON.parse(event.target.result);
-                    if (!Array.isArray(data)) throw new Error();
+                    const data = JSON.parse(ev.target.result);
                     const imported = data.map(t => ({ ...t, id: `local-${Date.now()}-${Math.random()}` }));
                     localTransactions = [...localTransactions, ...imported];
                     localStorage.setItem(STORAGE_KEY, JSON.stringify(localTransactions));
                     updateUI();
-                    showModal(`Đã khôi phục ${imported.length} giao dịch.`);
-                } catch { showModal("File không đúng định dạng."); }
+                    showModal(`Đã nhập ${imported.length} giao dịch.`);
+                } catch { showModal("Lỗi: File không đúng định dạng."); }
             };
             reader.readAsText(file);
         };
 
         const incomeCats = ['Lương', 'Thưởng', 'Khác'];
         const expenseCats = ['Ăn Sáng', 'Ăn Trưa', 'Ăn Chiều', 'Ăn Tối', 'Ăn Vặt', 'Mua Đồ Online', 'Chi Hàng Tháng', 'Đưa Vợ', 'Đi Chơi', 'Phát Sinh', 'Lặt Vặt'];
-        
+
         function updateCats() {
             const type = document.querySelector('input[name="type"]:checked').value;
             const list = type === 'income' ? incomeCats : expenseCats;
-            document.getElementById('descriptionContainer').innerHTML = `<label class="block text-sm font-medium mb-1">Danh Mục</label>
-                <select id="catInput" class="block w-full p-3 border rounded-md">${list.map(c => `<option value="${c}">${c}</option>`).join('')}</select>`;
+            document.getElementById('descriptionContainer').innerHTML = `
+                <label class="text-xs font-semibold text-slate-400 uppercase ml-1">Danh mục</label>
+                <select id="catInput" class="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500">
+                    ${list.map(c => `<option value="${c}">${c}</option>`).join('')}
+                </select>`;
         }
 
-        transactionForm.addEventListener('submit', (e) => {
+        document.getElementById('transactionForm').addEventListener('submit', (e) => {
             e.preventDefault();
             const amount = parseFloat(document.getElementById('amountInput').value);
             const type = document.querySelector('input[name="type"]:checked').value;
             const cat = document.getElementById('catInput').value;
             const custom = document.getElementById('customDescriptionInput').value.trim();
-            localTransactions.push({ id: `local-${Date.now()}`, type, amount, category: custom || cat, predefinedCategory: cat, date: document.getElementById('dateInput').value });
+            const date = document.getElementById('dateInput').value;
+            localTransactions.push({ id: `local-${Date.now()}`, type, amount, category: custom || cat, predefinedCategory: cat, date });
             localStorage.setItem(STORAGE_KEY, JSON.stringify(localTransactions));
-            transactionForm.reset(); updateCats(); 
-            const d = new Date(); document.getElementById('dateInput').value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            document.getElementById('amountInput').value = ""; document.getElementById('customDescriptionInput').value = "";
             updateUI();
+            showModal("Đã lưu thành công!");
         });
 
         async function init() {
-            const d = new Date(); document.getElementById('dateInput').value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            const d = new Date();
+            document.getElementById('dateInput').value = d.toISOString().split('T')[0];
             updateCats();
-            document.getElementById('typeSelector').addEventListener('change', updateCats);
             await fetchSheetData();
             loadLocal();
         }
