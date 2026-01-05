@@ -3,240 +3,204 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DT bank</title>
-   <link rel="icon" type="image/x-icon" href="https://share.google/S0czOiMGPQAuaHT0O">
+    <title>Quản Lý Thu Chi Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f8fafc;
-            padding-bottom: 80px;
-        }
-        .nav-item.active {
-            color: #4f46e5;
-        }
-        .nav-item.active svg {
-            fill: #4f46e5;
-        }
-        .safe-area-bottom {
-            padding-bottom: env(safe-area-inset-bottom);
-        }
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        ::-webkit-scrollbar {
-            width: 0px;
-            background: transparent;
-        }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; padding-bottom: 90px; }
+        .nav-item.active { color: #4f46e5; }
+        .nav-item.active svg { fill: #4f46e5; }
+        .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .collapse-content { display: none; }
+        .collapse-content.active { display: block; }
+        .rotate-icon { transition: transform 0.3s; }
+        .rotate-icon.active { transform: rotate(180deg); }
     </style>
 </head>
 <body>
-    <!-- Top Header -->
-    <header class="bg-white border-b sticky top-0 z-40 px-4 py-3">
+    <header class="bg-white border-b sticky top-0 z-40 px-4 py-3 shadow-sm">
         <div class="flex justify-between items-center max-w-lg mx-auto">
             <h1 id="pageTitle" class="text-xl font-bold text-slate-800">Trang Chủ</h1>
-            <div id="currentMonthDisplay" class="text-sm font-medium text-slate-500">Tháng --, ----</div>
+            <div id="currentMonthDisplay" class="text-sm font-semibold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">Tháng --, ----</div>
         </div>
     </header>
 
     <main class="max-w-lg mx-auto px-4 py-6">
-        
         <!-- TAB 1: TRANG CHỦ -->
         <section id="tab-home" class="tab-content active space-y-6">
-            <!-- Quick Stats -->
-            <div class="grid grid-cols-1 gap-4">
-                <div class="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-2xl p-6 text-white shadow-lg shadow-indigo-200">
-                    <p class="text-indigo-100 text-sm font-medium opacity-80">Số dư hiện tại</p>
-                    <h2 id="balanceDisplay" class="text-3xl font-bold mt-1">0 ₫</h2>
-                    <div class="flex justify-between mt-6 pt-4 border-t border-indigo-400/30">
-                        <div>
-                            <p class="text-xs text-indigo-100 opacity-70 italic">Thu tháng này</p>
-                            <p id="incomeDisplay" class="font-semibold">+ 0 ₫</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-xs text-indigo-100 opacity-70 italic">Chi tháng này</p>
-                            <p id="expenseDisplay" class="font-semibold">- 0 ₫</p>
-                        </div>
+            <div class="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-3xl p-6 text-white shadow-xl">
+                <p class="text-indigo-100 text-sm opacity-80">Số dư hiện tại</p>
+                <h2 id="balanceDisplay" class="text-3xl font-bold mt-1">0 ₫</h2>
+                <div class="flex justify-between mt-6 pt-4 border-t border-white/20">
+                    <div>
+                        <p class="text-[10px] text-indigo-100 uppercase font-bold tracking-wider">Thu tháng này</p>
+                        <p id="incomeDisplay" class="font-bold text-lg">+ 0 ₫</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[10px] text-indigo-100 uppercase font-bold tracking-wider">Chi tháng này</p>
+                        <p id="expenseDisplay" class="font-bold text-lg">- 0 ₫</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Add Transaction Form -->
+            <!-- Form Thêm Giao Dịch -->
             <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-                <h3 class="font-bold text-slate-800 mb-4 text-sm uppercase tracking-tight">Thêm giao dịch</h3>
+                <h3 class="font-bold text-slate-800 mb-4 text-xs uppercase tracking-widest">Giao dịch mới</h3>
                 <form id="transactionForm" class="space-y-4">
                     <div class="flex p-1 bg-slate-100 rounded-xl">
-                        <label class="flex-1 text-center py-2 rounded-lg cursor-pointer transition has-[:checked]:bg-white has-[:checked]:shadow-sm has-[:checked]:text-emerald-600 font-medium text-slate-500 text-sm">
-                            <input type="radio" name="type" value="income" class="hidden" onchange="updateCats()"> Thu nhập
+                        <label class="flex-1 text-center py-2 rounded-lg cursor-pointer transition has-[:checked]:bg-white has-[:checked]:shadow-sm has-[:checked]:text-emerald-600 font-bold text-slate-500 text-xs uppercase">
+                            <input type="radio" name="type" value="income" class="hidden" onchange="updateCategorySelect()"> Thu nhập
                         </label>
-                        <label class="flex-1 text-center py-2 rounded-lg cursor-pointer transition has-[:checked]:bg-white has-[:checked]:shadow-sm has-[:checked]:text-red-600 font-medium text-slate-500 text-sm">
-                            <input type="radio" name="type" value="expense" class="hidden" checked onchange="updateCats()"> Chi tiêu
+                        <label class="flex-1 text-center py-2 rounded-lg cursor-pointer transition has-[:checked]:bg-white has-[:checked]:shadow-sm has-[:checked]:text-red-600 font-bold text-slate-500 text-xs uppercase">
+                            <input type="radio" name="type" value="expense" class="hidden" checked onchange="updateCategorySelect()"> Chi tiêu
                         </label>
                     </div>
 
-                    <div id="descriptionContainer"></div>
+                    <div id="categoryContainer"></div>
 
                     <div>
-                        <label class="text-xs font-semibold text-slate-400 uppercase ml-1">Số tiền</label>
-                        <input type="number" id="amountInput" inputmode="numeric" placeholder="0" class="w-full bg-slate-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 font-bold text-lg" required>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Số tiền (₫)</label>
+                        <input type="number" id="amountInput" inputmode="numeric" placeholder="0" class="w-full bg-slate-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 font-bold text-xl" required>
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="text-xs font-semibold text-slate-400 uppercase ml-1">Ngày</label>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Ngày</label>
                             <input type="date" id="dateInput" class="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500" required>
                         </div>
                         <div>
-                            <label class="text-xs font-semibold text-slate-400 uppercase ml-1">Ghi chú</label>
-                            <input type="text" id="customDescriptionInput" placeholder="..." class="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Ghi chú</label>
+                            <input type="text" id="noteInput" placeholder="..." class="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500">
                         </div>
                     </div>
 
-                    <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-100 active:scale-95 transition">
-                        Lưu giao dịch
-                    </button>
+                    <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition">Lưu giao dịch</button>
                 </form>
             </div>
 
-            <!-- Summary History -->
+            <!-- Gần đây trên Home -->
             <div class="space-y-4">
                 <div class="flex items-center justify-between px-1">
-                    <h3 class="font-bold text-slate-800">Giao dịch gần đây</h3>
-                    <button onclick="switchTab('history', 'Lịch Sử')" class="text-xs font-bold text-indigo-600 uppercase tracking-wider">Xem tất cả</button>
+                    <h3 class="font-bold text-slate-800">Tháng này</h3>
+                    <button onclick="switchTab('history', 'Lịch Sử')" class="text-[10px] font-bold text-indigo-600 uppercase">Xem tất cả</button>
                 </div>
-                <div id="homeHistoryList" class="space-y-3"></div>
+                <div id="homeRecentList" class="space-y-4"></div>
             </div>
         </section>
 
         <!-- TAB 2: PHÂN TÍCH -->
         <section id="tab-analysis" class="tab-content space-y-6">
             <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-bold text-slate-800">Báo cáo chi tiêu</h3>
-                    <input type="month" id="analysisMonthPicker" class="text-sm bg-slate-50 border-none rounded-lg p-1 px-2 focus:ring-indigo-500" onchange="updateAnalysis()">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="font-bold text-slate-800">Chi tiêu theo nhóm</h3>
+                    <input type="month" id="analysisMonthPicker" class="text-sm bg-slate-50 border-none rounded-lg p-2 focus:ring-indigo-500" onchange="updateAnalysis()">
                 </div>
-                <div class="relative chart-container h-64 mb-6">
+                <div class="relative h-64 mb-8">
                     <canvas id="financeChart"></canvas>
-                    <!-- Center Text Container -->
-                    <div id="chartCenterText" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                         <span class="text-[10px] font-bold text-slate-400 uppercase">Tổng chi</span>
-                        <span id="chartTotalValue" class="text-sm font-bold text-slate-800">0 ₫</span>
+                        <span id="chartTotalValue" class="text-lg font-bold text-slate-800">0 ₫</span>
                     </div>
                 </div>
-                <div id="analysisEmptyState" class="hidden text-center py-10 text-slate-400 italic">Không có dữ liệu chi tiêu trong tháng này.</div>
-                <div id="analysisDetails" class="space-y-3 pt-4 border-t border-slate-50">
-                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Chi tiết từng mục</h4>
-                    <div id="categorySummaryList" class="space-y-2"></div>
-                </div>
+                <div id="groupSummaryList" class="space-y-4"></div>
             </div>
         </section>
 
         <!-- TAB 3: LỊCH SỬ -->
-        <section id="tab-history" class="tab-content space-y-4">
-            <div class="flex items-center justify-between mb-2">
-                <h3 class="font-bold text-slate-800">Tất cả lịch sử</h3>
-            </div>
-            <div id="historyList" class="space-y-4"></div>
+        <section id="tab-history" class="tab-content">
+            <div id="historyTree" class="space-y-3"></div>
         </section>
 
         <!-- TAB 4: CÀI ĐẶT -->
         <section id="tab-settings" class="tab-content space-y-6">
-            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-                <h3 class="font-bold text-slate-800 mb-6">Dữ liệu & Bảo mật</h3>
-                <div class="space-y-4">
-                    <button onclick="window.exportDataToJson()" class="w-full flex items-center justify-between p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition">
-                        <div class="flex items-center gap-3">
-                            <div class="p-2 bg-blue-100 text-blue-600 rounded-lg">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                            </div>
-                            <span class="font-medium text-slate-700">Sao lưu dữ liệu (JSON)</span>
-                        </div>
-                    </button>
-                    <input type="file" id="importFileInput" accept=".json" class="hidden" onchange="window.handleFileImport(event)">
-                    <button onclick="document.getElementById('importFileInput').click()" class="w-full flex items-center justify-between p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition">
-                        <div class="flex items-center gap-3">
-                            <div class="p-2 bg-emerald-100 text-emerald-600 rounded-lg">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                            </div>
-                            <span class="font-medium text-slate-700">Khôi phục dữ liệu (JSON)</span>
-                        </div>
-                    </button>
-                    <button onclick="clearAllLocalData()" class="w-full flex items-center justify-between p-4 bg-red-50 rounded-xl hover:bg-red-100 transition">
-                        <div class="flex items-center gap-3">
-                            <div class="p-2 bg-red-100 text-red-600 rounded-lg">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                            </div>
-                            <span class="font-medium text-red-700">Xóa tất cả dữ liệu máy</span>
-                        </div>
-                    </button>
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-6">
+                <h3 class="font-bold text-slate-800 text-sm uppercase">Tùy chỉnh Danh mục</h3>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between"><span class="text-xs font-bold text-emerald-600 uppercase">Thu nhập</span><button onclick="openAddCategoryModal('income')" class="text-xs bg-emerald-50 text-emerald-600 px-2 py-1 rounded-lg font-bold">+ Thêm</button></div>
+                    <div id="settingsIncomeList" class="flex flex-wrap gap-2"></div>
                 </div>
-                <p class="mt-8 text-center text-xs text-slate-400 italic">Phiên bản v2.6 - UI Enhancement</p>
+                <div class="space-y-4 pt-4 border-t">
+                    <div class="flex items-center justify-between"><span class="text-xs font-bold text-red-600 uppercase">Chi tiêu & Nhóm</span><button onclick="openAddGroupModal()" class="text-xs bg-red-50 text-red-600 px-2 py-1 rounded-lg font-bold">+ Nhóm mới</button></div>
+                    <div id="settingsExpenseGroupsList" class="space-y-3"></div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+                <h3 class="font-bold text-slate-800 text-sm uppercase mb-4">Dữ liệu</h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="exportData()" class="flex flex-col items-center justify-center p-4 bg-blue-50 text-blue-600 rounded-2xl gap-2"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg><span class="text-[10px] font-bold uppercase">Sao lưu</span></button>
+                    <button onclick="document.getElementById('importFile').click()" class="flex flex-col items-center justify-center p-4 bg-emerald-50 text-emerald-600 rounded-2xl gap-2"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg><span class="text-[10px] font-bold uppercase">Khôi phục</span></button>
+                </div>
+                <input type="file" id="importFile" class="hidden" accept=".json" onchange="importData(event)">
+                <button onclick="clearAllData()" class="w-full mt-3 py-3 text-red-500 text-[10px] font-bold uppercase tracking-widest bg-red-50 rounded-xl">Xóa sạch dữ liệu</button>
             </div>
         </section>
-
     </main>
 
     <!-- Navigation -->
-    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t safe-area-bottom z-50 shadow-[0_-4px_10px_rgba(0,0,0,0.03)]">
+    <nav class="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t safe-area-bottom z-50">
         <div class="max-w-lg mx-auto flex justify-around py-3">
             <button onclick="switchTab('home', 'Trang Chủ')" class="nav-item active flex flex-col items-center gap-1 w-full" id="btn-home">
-                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                <span class="text-[10px] font-bold uppercase tracking-wider">Trang chủ</span>
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
+                <span class="text-[9px] font-bold uppercase">Home</span>
             </button>
             <button onclick="switchTab('analysis', 'Phân Tích')" class="nav-item flex flex-col items-center gap-1 w-full" id="btn-analysis">
-                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-                <span class="text-[10px] font-bold uppercase tracking-wider">Phân tích</span>
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+                <span class="text-[9px] font-bold uppercase">Chart</span>
             </button>
             <button onclick="switchTab('history', 'Lịch Sử')" class="nav-item flex flex-col items-center gap-1 w-full" id="btn-history">
-                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>
-                <span class="text-[10px] font-bold uppercase tracking-wider">Lịch sử</span>
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                <span class="text-[9px] font-bold uppercase">History</span>
             </button>
             <button onclick="switchTab('settings', 'Cài Đặt')" class="nav-item flex flex-col items-center gap-1 w-full" id="btn-settings">
-                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                <span class="text-[10px] font-bold uppercase tracking-wider">Cài đặt</span>
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+                <span class="text-[9px] font-bold uppercase">Menu</span>
             </button>
         </div>
     </nav>
 
-    <!-- Modals -->
-    <div id="statusModal" class="fixed inset-0 bg-black bg-opacity-40 hidden items-center justify-center p-6 z-[100]">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-xs text-center shadow-xl">
-            <p id="modalMessage" class="text-slate-700 mb-6 font-medium"></p>
-            <button onclick="document.getElementById('statusModal').classList.add('hidden')" class="w-full bg-slate-900 text-white py-3 rounded-xl font-bold">OK</button>
-        </div>
-    </div>
-
-    <div id="deleteConfirmModal" class="fixed inset-0 bg-black bg-opacity-40 hidden items-center justify-center p-6 z-[100]">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-xs text-center shadow-xl">
-            <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-            </div>
-            <h3 class="font-bold text-slate-800 mb-2">Xác nhận xóa?</h3>
-            <p class="text-slate-500 text-sm mb-6">Bạn không thể hoàn tác hành động này.</p>
-            <div class="flex gap-3">
-                <button onclick="closeDeleteModal()" class="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-bold">Hủy</button>
-                <button id="confirmDeleteBtn" class="flex-1 bg-red-600 text-white py-3 rounded-xl font-bold">Xóa</button>
-            </div>
+    <!-- Modal Overlay -->
+    <div id="dialogOverlay" class="fixed inset-0 bg-black/40 hidden z-[100] items-center justify-center p-6 backdrop-blur-sm">
+        <div id="dialogBox" class="bg-white rounded-3xl p-6 w-full max-w-xs shadow-2xl">
+            <h3 id="dialogTitle" class="font-bold text-slate-800 mb-2"></h3>
+            <div id="dialogBody" class="mb-6"></div>
+            <div id="dialogActions" class="flex gap-2"></div>
         </div>
     </div>
 
     <script>
-        const STORAGE_KEY = 'finance_app_local_data_v1';
-        let sheetTransactions = []; 
-        let localTransactions = []; 
-        let allTransactions = []; 
-        let financeChartInstance = null;
-        let deleteIdPending = null;
+        const DB_KEY = 'finance_v2_final';
+        const DEFAULT_STATE = {
+            transactions: [],
+            incomeCategories: ['Lương', 'Thưởng', 'Lãi tiết kiệm'],
+            expenseGroups: [
+                { id: 'g1', name: 'Ăn uống', color: '#f87171', categories: ['Ăn sáng', 'Ăn trưa', 'Ăn tối', 'Ăn vặt', 'Cà phê'] },
+                { id: 'g2', name: 'Sinh hoạt', color: '#60a5fa', categories: ['Tiền điện', 'Tiền nước', 'Internet', 'Rác'] },
+                { id: 'g3', name: 'Di chuyển', color: '#fbbf24', categories: ['Xăng xe', 'Gửi xe', 'Sửa xe'] },
+                { id: 'g4', name: 'Khác', color: '#94a3b8', categories: ['Mua sắm', 'Phát sinh', 'Lặt vặt'] }
+            ]
+        };
 
-        const SHEET_ID = '1Fs72QcxZIFgYbL62wTvmUgGG9OeEiV_B';
-        const GID = '0'; 
-        const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}`;
-        const COLORS = ['#ef4444', '#f59e0b', '#6366f1', '#10b981', '#94a3b8', '#ec4899', '#8b5cf6'];
+        let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+        let chartInstance = null;
+
+        function saveState() {
+            localStorage.setItem(DB_KEY, JSON.stringify(state));
+            updateUI();
+        }
+
+        function loadState() {
+            const stored = localStorage.getItem(DB_KEY);
+            if (stored) state = JSON.parse(stored);
+            updateUI();
+        }
+
+        function formatVND(amount) {
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+        }
 
         function switchTab(tabId, title) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
@@ -245,361 +209,326 @@
             document.getElementById(`btn-${tabId}`).classList.add('active');
             document.getElementById('pageTitle').textContent = title;
             if (tabId === 'analysis') updateAnalysis();
-            if (tabId === 'home') updateUI();
-            if (tabId === 'history') renderHistory();
+            if (tabId === 'history') renderHistoryTree();
+            if (tabId === 'settings') renderSettings();
             window.scrollTo(0, 0);
         }
 
-        function formatCurrency(val) {
-            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
-        }
-
-        function showModal(msg) {
-            document.getElementById('modalMessage').textContent = msg;
-            const modal = document.getElementById('statusModal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
-
-        function openDeleteModal(id) {
-            deleteIdPending = id;
-            document.getElementById('deleteConfirmModal').classList.remove('hidden');
-            document.getElementById('deleteConfirmModal').classList.add('flex');
-            document.getElementById('confirmDeleteBtn').onclick = confirmDelete;
-        }
-
-        function closeDeleteModal() {
-            deleteIdPending = null;
-            document.getElementById('deleteConfirmModal').classList.add('hidden');
-        }
-
-        function confirmDelete() {
-            if (deleteIdPending) {
-                localTransactions = localTransactions.filter(t => t.id !== deleteIdPending);
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(localTransactions));
-                updateUI();
-                closeDeleteModal();
-            }
-        }
-
-        function clearAllLocalData() {
-            if (confirm("Cảnh báo: Thao tác này sẽ xóa vĩnh viễn tất cả dữ liệu lưu cục bộ trên máy này. Tiếp tục?")) {
-                localTransactions = [];
-                localStorage.removeItem(STORAGE_KEY);
-                updateUI();
-                showModal("Đã xóa toàn bộ dữ liệu máy.");
-            }
-        }
-
-        async function fetchSheetData() {
-            try {
-                const res = await fetch(SHEET_URL);
-                const text = await res.text();
-                const match = text.match(/google\.visualization\.Query\.setResponse\(([^;]+)\);/);
-                const data = match ? JSON.parse(match[1]).table : null;
-                const temp = [];
-                if (data && data.rows) {
-                    for (let i = 1; i < data.rows.length; i++) {
-                        const c = data.rows[i].c;
-                        if (!c[0] || !c[1] || !c[3] || c[3].v === null) continue;
-                        let dStr = '';
-                        if (c[0].f) {
-                            const f = String(c[0].f).trim();
-                            if (f.includes('/')) {
-                                const p = f.split('/');
-                                if (p.length === 3) dStr = `${p[2]}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`;
-                            } else if (f.length === 10 && f.includes('-')) dStr = f;
-                        }
-                        if (dStr.length !== 10) continue;
-                        
-                        const catFromSheet = c[2] && c[2].v ? String(c[2].v).trim() : 'Khác';
-                        const noteFromSheet = c[4] && c[4].v ? String(c[4].v).trim() : '';
-
-                        temp.push({
-                            id: `sheet-${i}`, 
-                            type: (String(c[1].v).toLowerCase().trim() === 'thu' ? 'income' : 'expense'),
-                            amount: parseFloat(c[3].v),
-                            category: catFromSheet,
-                            description: noteFromSheet,
-                            date: dStr
-                        });
-                    }
-                }
-                sheetTransactions = temp;
-            } catch (e) { console.error("Sheet Load Error", e); }
-        }
-
-        function loadLocal() {
-            localTransactions = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-            updateUI();
-        }
-
         function updateUI() {
-            allTransactions = [...sheetTransactions, ...localTransactions];
             const now = new Date();
             const curM = String(now.getMonth() + 1).padStart(2, '0');
-            const curY = String(now.getFullYear());
-            const curMonthKey = `${curY}-${curM}`;
-            
+            const curY = now.getFullYear();
+            const curMonthStr = `${curY}-${curM}`;
             document.getElementById('currentMonthDisplay').textContent = `Tháng ${curM}, ${curY}`;
 
-            let tBalance = 0; 
-            let curMIncome = 0; 
-            let curMExpense = 0; 
-            
-            allTransactions.forEach(tx => {
-                if (tx.type === 'income') tBalance += tx.amount;
-                else tBalance -= tx.amount;
-
-                if (tx.date.startsWith(curMonthKey)) {
-                    if (tx.type === 'income') curMIncome += tx.amount;
-                    else curMExpense += tx.amount;
+            let balance = 0, mIncome = 0, mExpense = 0;
+            state.transactions.forEach(t => {
+                const isThisMonth = t.date.startsWith(curMonthStr);
+                if (t.type === 'income') {
+                    balance += t.amount;
+                    if (isThisMonth) mIncome += t.amount;
+                } else {
+                    balance -= t.amount;
+                    if (isThisMonth) mExpense += t.amount;
                 }
             });
 
-            document.getElementById('balanceDisplay').textContent = formatCurrency(tBalance);
-            document.getElementById('incomeDisplay').textContent = `+ ${formatCurrency(curMIncome)}`;
-            document.getElementById('expenseDisplay').textContent = `- ${formatCurrency(curMExpense)}`;
-            
-            renderHomeHistory();
-            if (document.getElementById('tab-analysis').classList.contains('active')) updateAnalysis();
-            if (document.getElementById('tab-history').classList.contains('active')) renderHistory();
+            document.getElementById('balanceDisplay').textContent = formatVND(balance);
+            document.getElementById('incomeDisplay').textContent = `+ ${formatVND(mIncome)}`;
+            document.getElementById('expenseDisplay').textContent = `- ${formatVND(mExpense)}`;
+
+            renderHomeRecent(curMonthStr);
+            updateCategorySelect();
         }
 
-        // Updated helper function for title display
-        function getTransactionTitle(tx) {
-            const cat = tx.category || 'Khác';
-            const note = tx.description ? tx.description.trim() : '';
-            return note ? `${cat} - ${note}` : cat;
-        }
-
-        function renderHomeHistory() {
-            const list = document.getElementById('homeHistoryList');
-            const now = new Date();
-            const todayStr = now.toISOString().split('T')[0];
-            const curMonthStr = todayStr.substring(0, 7);
+        function renderHomeRecent(monthStr) {
+            const list = document.getElementById('homeRecentList');
+            const filtered = state.transactions.filter(t => t.date.startsWith(monthStr)).sort((a,b) => b.date.localeCompare(a.date));
             
-            const monthTxs = allTransactions.filter(tx => tx.date.startsWith(curMonthStr));
-            const sorted = [...monthTxs].sort((a, b) => b.date.localeCompare(a.date));
-
-            if (sorted.length === 0) {
-                list.innerHTML = '<div class="text-center py-6 text-slate-400 text-sm italic">Tháng này chưa có giao dịch.</div>';
+            if (filtered.length === 0) {
+                list.innerHTML = '<div class="text-center py-6 text-slate-400 text-xs italic">Chưa có giao dịch trong tháng này.</div>';
                 return;
             }
 
-            list.innerHTML = '';
-            let processedDates = new Set();
-            sorted.forEach(tx => {
-                if (tx.date === todayStr) {
-                    const item = document.createElement('div');
-                    item.className = "bg-white p-3 rounded-xl shadow-sm border border-slate-50 flex items-center justify-between";
-                    item.innerHTML = `
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-lg flex items-center justify-center ${tx.type === 'income' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}">
-                                <span class="text-[9px] font-bold uppercase">${tx.type === 'income' ? 'THU' : 'CHI'}</span>
-                            </div>
-                            <div class="max-w-[150px]">
-                                <p class="font-bold text-slate-800 text-xs truncate">${getTransactionTitle(tx)}</p>
-                                <p class="text-[9px] text-slate-400 font-medium">Hôm nay</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span class="font-bold text-sm ${tx.type === 'income' ? 'text-emerald-600' : 'text-slate-800'}">
-                                ${tx.type === 'income' ? '+' : ''}${formatCurrency(tx.amount).replace('₫', '').trim()}
-                            </span>
-                            ${tx.id.startsWith('local-') ? `
-                                <button onclick="openDeleteModal('${tx.id}')" class="text-slate-300 active:text-red-500">
-                                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                                </button>` : ''}
-                        </div>
-                    `;
-                    list.appendChild(item);
-                } else if (!processedDates.has(tx.date)) {
-                    const dayTxs = monthTxs.filter(t => t.date === tx.date);
-                    let dayNet = 0;
-                    dayTxs.forEach(t => dayNet += (t.type === 'income' ? t.amount : -t.amount));
-                    const dateObj = new Date(tx.date);
-                    const displayDate = dateObj.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
-                    const summaryItem = document.createElement('div');
-                    summaryItem.className = "bg-slate-50 p-3 rounded-xl flex items-center justify-between border border-transparent";
-                    summaryItem.innerHTML = `
-                        <span class="text-xs font-bold text-slate-500">${displayDate}</span>
-                        <div class="text-right">
-                            <span class="text-xs font-bold ${dayNet >= 0 ? 'text-emerald-600' : 'text-slate-400'}">
-                                ${dayNet >= 0 ? '+' : ''}${formatCurrency(Math.abs(dayNet)).replace('₫', '').trim()}
-                            </span>
-                        </div>
-                    `;
-                    list.appendChild(summaryItem);
-                    processedDates.add(tx.date);
-                }
+            const days = {};
+            filtered.forEach(t => {
+                if (!days[t.date]) days[t.date] = { totalExp: 0, items: [] };
+                if (t.type === 'expense') days[t.date].totalExp += t.amount;
+                days[t.date].items.push(t);
             });
+
+            list.innerHTML = Object.entries(days).map(([date, data]) => `
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center px-1">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${date.split('-').reverse().join('/')}</span>
+                        <span class="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full">Chi: ${formatVND(data.totalExp)}</span>
+                    </div>
+                    <div class="space-y-2">
+                        ${data.items.map(t => `
+                            <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-50 flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-[8px] ${t.type === 'income' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}">
+                                        ${t.type === 'income' ? 'THU' : 'CHI'}
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-slate-800 text-[11px] leading-tight">${t.category}</p>
+                                        <p class="text-[9px] text-slate-400 font-medium">${t.note || '---'}</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <p class="font-bold text-xs ${t.type === 'income' ? 'text-emerald-600' : 'text-slate-800'}">
+                                        ${t.type === 'income' ? '+' : ''}${formatVND(t.amount).replace('₫', '').trim()}
+                                    </p>
+                                    <button onclick="deleteTransaction('${t.id}')" class="text-slate-200 active:text-red-500">
+                                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7a2 2 0 01-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderHistoryTree() {
+            const container = document.getElementById('historyTree');
+            if (state.transactions.length === 0) {
+                container.innerHTML = '<div class="text-center py-20 text-slate-400 italic">Trống</div>';
+                return;
+            }
+
+            const months = {};
+            state.transactions.forEach(t => {
+                const mKey = t.date.substring(0, 7);
+                if (!months[mKey]) months[mKey] = { income: 0, expense: 0, days: {} };
+                if (t.type === 'income') months[mKey].income += t.amount;
+                else months[mKey].expense += t.amount;
+
+                if (!months[mKey].days[t.date]) months[mKey].days[t.date] = { expense: 0, items: [] };
+                if (t.type === 'expense') months[mKey].days[t.date].expense += t.amount;
+                months[mKey].days[t.date].items.push(t);
+            });
+
+            const sortedMonths = Object.keys(months).sort((a,b) => b.localeCompare(a));
+
+            container.innerHTML = sortedMonths.map(mKey => {
+                const mData = months[mKey];
+                const [y, m] = mKey.split('-');
+                return `
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                        <button onclick="toggleCollapse('m-${mKey}')" class="w-full flex justify-between items-center p-4 bg-slate-50">
+                            <div>
+                                <p class="font-bold text-slate-800 text-sm">Tháng ${m}/${y}</p>
+                                <div class="flex gap-3 mt-1">
+                                    <span class="text-[9px] font-bold text-emerald-600">+ ${formatVND(mData.income)}</span>
+                                    <span class="text-[9px] font-bold text-red-500">- ${formatVND(mData.expense)}</span>
+                                </div>
+                            </div>
+                            <svg id="icon-m-${mKey}" class="rotate-icon w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <div id="m-${mKey}" class="collapse-content border-t divide-y divide-slate-50">
+                            ${Object.keys(mData.days).sort((a,b) => b.localeCompare(a)).map(dKey => {
+                                const dData = mData.days[dKey];
+                                return `
+                                    <div class="p-0">
+                                        <button onclick="toggleCollapse('d-${dKey}')" class="w-full flex justify-between items-center px-4 py-3 hover:bg-slate-50/50">
+                                            <div class="flex items-center gap-3">
+                                                <span class="text-xs font-bold text-slate-500">${dKey.split('-').reverse().join('/')}</span>
+                                                <span class="text-[10px] font-bold text-red-400">Chi: ${formatVND(dData.expense)}</span>
+                                            </div>
+                                            <svg id="icon-d-${dKey}" class="rotate-icon w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                        </button>
+                                        <div id="d-${dKey}" class="collapse-content px-4 pb-3 space-y-2">
+                                            ${dData.items.map(t => `
+                                                <div class="flex justify-between items-center p-2 bg-slate-50 rounded-xl">
+                                                    <div class="flex items-center gap-3">
+                                                        <div class="text-[8px] font-bold ${t.type === 'income' ? 'text-emerald-500' : 'text-red-500'}">${t.type === 'income' ? 'THU' : 'CHI'}</div>
+                                                        <div>
+                                                            <p class="text-[11px] font-bold text-slate-800">${t.category}</p>
+                                                            <p class="text-[9px] text-slate-400 font-medium">${t.note || '---'}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex items-center gap-2">
+                                                        <span class="text-xs font-bold ${t.type === 'income' ? 'text-emerald-600' : 'text-slate-700'}">${formatVND(t.amount)}</span>
+                                                        <button onclick="deleteTransaction('${t.id}')" class="text-slate-300 ml-1">
+                                                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7a2 2 0 01-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleCollapse(id) {
+            const el = document.getElementById(id);
+            const icon = document.getElementById('icon-' + id);
+            if (el.classList.contains('active')) {
+                el.classList.remove('active');
+                icon.classList.remove('active');
+            } else {
+                el.classList.add('active');
+                icon.classList.add('active');
+            }
+        }
+
+        function updateCategorySelect() {
+            const typeInput = document.querySelector('input[name="type"]:checked');
+            if(!typeInput) return;
+            const type = typeInput.value;
+            let optionsHtml = '';
+            if (type === 'income') {
+                optionsHtml = state.incomeCategories.map(c => `<option value="${c}">${c}</option>`).join('');
+            } else {
+                state.expenseGroups.forEach(g => {
+                    optionsHtml += `<optgroup label="${g.name}">`;
+                    g.categories.forEach(c => { optionsHtml += `<option value="${c}">${c}</option>`; });
+                    optionsHtml += `</optgroup>`;
+                });
+            }
+            document.getElementById('categoryContainer').innerHTML = `
+                <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Danh mục</label>
+                <select id="catInput" class="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 font-medium">
+                    ${optionsHtml}
+                </select>`;
+        }
+
+        function deleteTransaction(id) {
+            openDialog('Xác nhận xóa', '<p class="text-xs text-center text-slate-500">Dữ liệu này sẽ được xóa vĩnh viễn.</p>', [
+                { label: 'Hủy', class: 'flex-1 py-3 font-bold text-slate-400', onClick: closeDialog },
+                { label: 'Xóa', class: 'flex-1 py-3 bg-red-600 text-white font-bold rounded-xl', onClick: () => {
+                    state.transactions = state.transactions.filter(t => t.id !== id);
+                    saveState();
+                    // Cập nhật lại view hiện tại
+                    if(document.getElementById('tab-history').classList.contains('active')) renderHistoryTree();
+                    closeDialog();
+                }}
+            ]);
         }
 
         function updateAnalysis() {
             const picker = document.getElementById('analysisMonthPicker');
-            if (!picker.value) {
-                const now = new Date();
-                picker.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-            }
+            if (!picker.value) picker.value = new Date().toISOString().substring(0, 7);
             const [y, m] = picker.value.split('-');
-            const totals = {'Ăn Uống': 0, 'Chi Hàng Tháng': 0, 'Đưa Vợ': 0, 'Khác': 0};
+            
+            const groupTotals = {};
+            state.expenseGroups.forEach(g => groupTotals[g.id] = { name: g.name, color: g.color, total: 0 });
+            
             let totalExpense = 0;
-
-            allTransactions.filter(tx => tx.type === 'expense' && tx.date.startsWith(`${y}-${m}`)).forEach(tx => {
-                let cat = 'Khác';
-                if (['Ăn Sáng', 'Ăn Trưa', 'Ăn Chiều', 'Ăn Tối', 'Ăn Vặt'].includes(tx.category)) cat = 'Ăn Uống';
-                else if (['Chi Hàng Tháng', 'Đưa Vợ'].includes(tx.category)) cat = tx.category;
-                totals[cat] += tx.amount;
-                totalExpense += tx.amount;
+            state.transactions.filter(t => t.type === 'expense' && t.date.startsWith(`${y}-${m}`)).forEach(t => {
+                const group = state.expenseGroups.find(g => g.categories.includes(t.category)) || state.expenseGroups[state.expenseGroups.length-1];
+                if (group && groupTotals[group.id]) {
+                    groupTotals[group.id].total += t.amount;
+                    totalExpense += t.amount;
+                }
             });
 
-            // Update Center Text in Chart
-            document.getElementById('chartTotalValue').textContent = formatCurrency(totalExpense);
+            document.getElementById('chartTotalValue').textContent = formatVND(totalExpense);
+            const activeGroups = Object.values(groupTotals).filter(g => g.total > 0);
 
-            const labels = Object.keys(totals).filter(k => totals[k] > 0);
-            const data = labels.map(k => totals[k]);
-
-            if (data.length === 0) {
-                document.getElementById('analysisEmptyState').classList.remove('hidden');
-                document.getElementById('financeChart').classList.add('hidden');
-                document.getElementById('chartCenterText').classList.add('hidden');
-                document.getElementById('analysisDetails').classList.add('hidden');
-                return;
-            }
-
-            document.getElementById('analysisEmptyState').classList.add('hidden');
-            document.getElementById('financeChart').classList.remove('hidden');
-            document.getElementById('chartCenterText').classList.remove('hidden');
-            document.getElementById('analysisDetails').classList.remove('hidden');
-
-            const summaryList = document.getElementById('categorySummaryList');
-            summaryList.innerHTML = '';
-            labels.forEach((label, index) => {
-                const amount = totals[label];
-                const item = document.createElement('div');
-                item.className = "flex items-center justify-between p-3 bg-slate-50 rounded-xl";
-                item.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <div class="w-2 h-8 rounded-full" style="background-color: ${COLORS[index % COLORS.length]}"></div>
-                        <p class="text-sm font-bold text-slate-700">${label}</p>
-                    </div>
-                    <p class="font-bold text-slate-800 text-sm">${formatCurrency(amount)}</p>
-                `;
-                summaryList.appendChild(item);
-            });
-
-            if (financeChartInstance) financeChartInstance.destroy();
-            financeChartInstance = new Chart(document.getElementById('financeChart'), {
+            if (chartInstance) chartInstance.destroy();
+            chartInstance = new Chart(document.getElementById('financeChart'), {
                 type: 'doughnut',
-                data: { labels, datasets: [{ data, backgroundColor: COLORS, borderWidth: 0 }] },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false, 
-                    plugins: { legend: { display: false } }, 
-                    cutout: '75%', 
-                    elements: { arc: { roundedCornersForced: true } }
-                }
+                data: {
+                    labels: activeGroups.map(g => g.name),
+                    datasets: [{ data: activeGroups.map(g => g.total), backgroundColor: activeGroups.map(g => g.color), borderWidth: 0 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '80%', plugins: { legend: { display: false } } }
             });
+
+            document.getElementById('groupSummaryList').innerHTML = activeGroups.map(g => `
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full" style="background-color: ${g.color}"></div><span class="text-xs font-bold text-slate-700 uppercase">${g.name}</span></div>
+                    <span class="text-xs font-bold text-slate-800">${formatVND(g.total)}</span>
+                </div>
+            `).join('');
         }
 
-        function renderHistory() {
-            const list = document.getElementById('historyList');
-            list.innerHTML = '';
-            const sorted = [...allTransactions].sort((a, b) => b.date.localeCompare(a.date));
-            let lastDate = "";
-            sorted.forEach(tx => {
-                if (tx.date !== lastDate) {
-                    const header = document.createElement('div');
-                    header.className = "text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-4 mb-2 ml-1";
-                    header.textContent = new Date(tx.date).toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long' });
-                    list.appendChild(header);
-                    lastDate = tx.date;
-                }
-                const item = document.createElement('div');
-                item.className = "bg-white p-4 rounded-xl shadow-sm flex items-center justify-between border border-slate-50";
-                item.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full flex items-center justify-center ${tx.type === 'income' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}">
-                            ${tx.type === 'income' ? '↑' : '↓'}
-                        </div>
-                        <div class="max-w-[180px]">
-                            <p class="font-bold text-slate-800 text-sm truncate">${getTransactionTitle(tx)}</p>
-                            <p class="text-[10px] text-slate-400 font-medium">${tx.type === 'income' ? 'Thu nhập' : 'Chi tiêu'}</p>
-                        </div>
-                    </div>
-                    <div class="text-right flex items-center gap-2">
-                        <span class="font-bold ${tx.type === 'income' ? 'text-emerald-600' : 'text-slate-800'}">${tx.type === 'income' ? '+' : ''}${formatCurrency(tx.amount).replace('₫', '').trim()}</span>
-                        ${tx.id.startsWith('local-') ? `<button onclick="openDeleteModal('${tx.id}')" class="text-slate-300 ml-1">🗑</button>` : ''}
-                    </div>
-                `;
-                list.appendChild(item);
+        function openDialog(title, bodyHtml, actions) {
+            document.getElementById('dialogTitle').textContent = title;
+            document.getElementById('dialogBody').innerHTML = bodyHtml;
+            const container = document.getElementById('dialogActions');
+            container.innerHTML = '';
+            if (!actions) actions = [{ label: 'Đóng', class: 'bg-slate-900 text-white w-full py-3 rounded-xl font-bold', onClick: closeDialog }];
+            actions.forEach(act => {
+                const btn = document.createElement('button');
+                btn.className = act.class || 'flex-1 py-3 font-bold rounded-xl';
+                btn.textContent = act.label;
+                btn.onclick = act.onClick;
+                container.appendChild(btn);
             });
+            document.getElementById('dialogOverlay').classList.replace('hidden', 'flex');
         }
 
-        window.exportDataToJson = () => {
-            const data = localTransactions.map(({id, ...rest}) => rest);
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        function closeDialog() { document.getElementById('dialogOverlay').classList.replace('flex', 'hidden'); }
+
+        function renderSettings() {
+            document.getElementById('settingsIncomeList').innerHTML = state.incomeCategories.map(c => `<div class="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-[10px] font-bold flex items-center gap-2 uppercase tracking-wide">${c}<button onclick="removeIncomeCategory('${c}')" class="text-emerald-300">×</button></div>`).join('');
+            document.getElementById('settingsExpenseGroupsList').innerHTML = state.expenseGroups.map(g => `
+                <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                    <div class="flex justify-between items-center mb-3">
+                        <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full" style="background-color: ${g.color}"></div><span class="text-[10px] font-bold text-slate-600 uppercase tracking-widest">${g.name}</span></div>
+                        <button onclick="removeGroup('${g.id}')" class="text-[10px] text-red-400 font-bold uppercase">Xóa</button>
+                    </div>
+                    <div class="flex flex-wrap gap-2 mb-3">
+                        ${g.categories.map(c => `<div class="bg-white px-2 py-1 rounded-lg text-[10px] font-medium border border-slate-200 flex items-center gap-2 shadow-sm">${c}<button onclick="removeCategoryFromGroup('${g.id}', '${c}')" class="text-slate-300">×</button></div>`).join('')}
+                    </div>
+                    <button onclick="openAddCategoryToGroupModal('${g.id}')" class="w-full py-2 bg-white rounded-lg border border-dashed border-slate-300 text-[10px] font-bold text-slate-400 uppercase">+ Thêm danh mục</button>
+                </div>`).join('');
+        }
+
+        function openAddCategoryModal(type) { openDialog('Thêm danh mục', '<input id="modalInput" class="w-full bg-slate-100 rounded-xl p-3 text-sm" placeholder="Tên danh mục">', [{label:'Hủy', onClick:closeDialog},{label:'Thêm', class:'bg-indigo-600 text-white rounded-xl py-3 flex-1 font-bold', onClick:() => { const v = document.getElementById('modalInput').value.trim(); if(v){ state.incomeCategories.push(v); saveState(); renderSettings(); closeDialog(); }}}])}
+        function removeIncomeCategory(n) { state.incomeCategories = state.incomeCategories.filter(c=>c!==n); saveState(); renderSettings(); }
+        function removeGroup(id) { state.expenseGroups = state.expenseGroups.filter(g=>g.id!==id); saveState(); renderSettings(); }
+        function removeCategoryFromGroup(gId, cN) { const g = state.expenseGroups.find(x=>x.id===gId); if(g) g.categories = g.categories.filter(c=>c!==cN); saveState(); renderSettings(); }
+        function openAddCategoryToGroupModal(gId) { openDialog('Thêm vào nhóm', '<input id="catName" class="w-full bg-slate-100 rounded-xl p-3 text-sm" placeholder="Tên danh mục">', [{label:'Hủy', onClick:closeDialog},{label:'Lưu', class:'bg-indigo-600 text-white rounded-xl py-3 flex-1 font-bold', onClick:() => { const n = document.getElementById('catName').value.trim(); if(n){ const g = state.expenseGroups.find(x=>x.id===gId); if(g && !g.categories.includes(n)) g.categories.push(n); saveState(); renderSettings(); closeDialog(); }}}])}
+        function openAddGroupModal() { openDialog('Nhóm mới', '<input id="groupName" class="w-full bg-slate-100 rounded-xl p-3 text-sm" placeholder="Tên nhóm">', [{label:'Hủy', onClick:closeDialog},{label:'Tạo', class:'bg-indigo-600 text-white rounded-xl py-3 flex-1 font-bold', onClick:() => { const n = document.getElementById('groupName').value.trim(); if(n){ state.expenseGroups.push({id:'g'+Date.now(), name:n, color:'#'+Math.floor(Math.random()*16777215).toString(16), categories:[]}); saveState(); renderSettings(); closeDialog(); }}}])}
+
+        function exportData() {
+            const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.href = url; a.download = `finance_backup.json`; a.click();
-        };
+            a.href = url; a.download = `finance_pro_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+        }
 
-        window.handleFileImport = (e) => {
+        function importData(e) {
             const reader = new FileReader();
             reader.onload = (ev) => {
-                const imported = JSON.parse(ev.target.result).map(t => ({ ...t, id: `local-${Date.now()}-${Math.random()}` }));
-                localTransactions = [...localTransactions, ...imported];
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(localTransactions));
-                updateUI();
-                showModal("Đã khôi phục dữ liệu.");
+                try {
+                    state = JSON.parse(ev.target.result);
+                    saveState();
+                    openDialog('Thành công', '<p class="text-xs text-center">Dữ liệu đã được cập nhật hoàn toàn.</p>');
+                    location.reload();
+                } catch (err) { openDialog('Lỗi', 'Tệp không hợp lệ'); }
             };
-            reader.readAsText(e.target.files[0]);
-        };
-
-        const incomeCats = ['Lương', 'Thưởng', 'Khác'];
-        const expenseCats = ['Ăn Sáng', 'Ăn Trưa', 'Ăn Chiều', 'Ăn Tối', 'Ăn Vặt', 'Mua Đồ Online', 'Chi Hàng Tháng', 'Đưa Vợ', 'Đi Chơi', 'Phát Sinh', 'Lặt Vặt'];
-
-        function updateCats() {
-            const type = document.querySelector('input[name="type"]:checked').value;
-            const list = type === 'income' ? incomeCats : expenseCats;
-            document.getElementById('descriptionContainer').innerHTML = `
-                <label class="text-xs font-semibold text-slate-400 uppercase ml-1">Danh mục</label>
-                <select id="catInput" class="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500">
-                    ${list.map(c => `<option value="${c}">${c}</option>`).join('')}
-                </select>`;
+            if(e.target.files[0]) reader.readAsText(e.target.files[0]);
         }
+
+        function clearAllData() { if(confirm("Bạn có chắc muốn xóa toàn bộ dữ liệu?")) { state = JSON.parse(JSON.stringify(DEFAULT_STATE)); saveState(); location.reload(); } }
 
         document.getElementById('transactionForm').addEventListener('submit', (e) => {
             e.preventDefault();
             const amount = parseFloat(document.getElementById('amountInput').value);
             const type = document.querySelector('input[name="type"]:checked').value;
-            const cat = document.getElementById('catInput').value;
-            const description = document.getElementById('customDescriptionInput').value.trim();
+            const category = document.getElementById('catInput').value;
+            const note = document.getElementById('noteInput').value.trim();
             const date = document.getElementById('dateInput').value;
-            
-            localTransactions.push({ 
-                id: `local-${Date.now()}`, 
-                type, 
-                amount, 
-                category: cat, 
-                description: description, 
-                date 
-            });
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(localTransactions));
-            document.getElementById('amountInput').value = ""; 
-            document.getElementById('customDescriptionInput').value = "";
-            updateUI();
-            showModal("Đã lưu giao dịch!");
+            state.transactions.push({ id: 't'+Date.now(), type, amount, category, note, date });
+            saveState();
+            document.getElementById('amountInput').value = '';
+            document.getElementById('noteInput').value = '';
+            openDialog('Đã lưu', '<p class="text-xs text-center">Ghi chép thành công.</p>');
         });
 
-        async function init() {
-            document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
-            updateCats();
-            await fetchSheetData();
-            loadLocal();
-        }
-        init();
+        document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
+        loadState();
     </script>
 </body>
 </html>
