@@ -24,6 +24,11 @@
             background-color: white;
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
         }
+        /* Style cho thanh cuộn tùy chỉnh để trông mượt hơn */
+        .custom-scrollbar::-webkit-scrollbar { height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
 <body>
@@ -69,7 +74,7 @@
 
                     <div>
                         <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Số tiền (₫)</label>
-                        <input type="text" id="amountDisplayInput" inputmode="numeric" placeholder="0" class="w-full bg-slate-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 font-bold text-xl" oninput="formatCurrencyInput(this)" required>
+                        <input type="text" id="amountDisplayInput" inputmode="text" placeholder="0" class="w-full bg-slate-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 font-bold text-xl text-right" oninput="formatCurrencyInput(this)" required>
                         <input type="hidden" id="amountInput">
                     </div>
 
@@ -101,10 +106,25 @@
         <!-- TAB 2: PHÂN TÍCH -->
         <section id="tab-analysis" class="tab-content space-y-6">
             <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="font-bold text-slate-800">Chi tiêu theo nhóm</h3>
-                    <input type="month" id="analysisMonthPicker" class="text-sm bg-slate-50 border-none rounded-lg p-2 focus:ring-indigo-500" onchange="updateAnalysis()">
+                <div class="flex flex-col gap-4 mb-6">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-bold text-slate-800">Chi tiêu theo nhóm</h3>
+                        <!-- Toggle Tháng/Năm -->
+                        <div class="flex bg-slate-100 rounded-lg p-1">
+                            <button onclick="changeAnalysisMode('month')" id="btnModeMonth" class="px-3 py-1 text-xs font-bold rounded-md bg-white shadow-sm text-indigo-600 transition">Tháng</button>
+                            <button onclick="changeAnalysisMode('year')" id="btnModeYear" class="px-3 py-1 text-xs font-bold rounded-md text-slate-500 transition">Năm</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Month Picker -->
+                    <input type="month" id="analysisMonthPicker" class="text-sm bg-slate-50 border-none rounded-xl p-3 focus:ring-indigo-500 font-bold w-full" onchange="updateAnalysis()">
+                    
+                    <!-- Year Picker (Hidden by default) -->
+                    <select id="analysisYearPicker" class="text-sm bg-slate-50 border-none rounded-xl p-3 focus:ring-indigo-500 font-bold w-full hidden" onchange="updateAnalysis()">
+                        <!-- Javascript will populate this -->
+                    </select>
                 </div>
+
                 <div class="relative h-64 mb-8">
                     <canvas id="financeChart"></canvas>
                     <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
@@ -113,6 +133,32 @@
                     </div>
                 </div>
                 <div id="groupSummaryList" class="space-y-4"></div>
+
+                <!-- BIỂU ĐỒ XU HƯỚNG CẢI TIẾN -->
+                <div class="mt-8 pt-6 border-t border-slate-100">
+                    <h3 class="font-bold text-slate-800 mb-4 text-xs uppercase tracking-widest">Xu hướng dòng tiền</h3>
+                    
+                    <!-- Container chính chứa 2 biểu đồ -->
+                    <div class="flex h-64 relative">
+                        <!-- Cột Y-Axis Cố định -->
+                        <!-- ĐÃ SỬA: Tăng width từ w-12 lên w-16 để hiển thị hết số -->
+                        <div class="w-16 h-full flex-shrink-0 bg-white z-10 border-r border-slate-100">
+                            <canvas id="trendYAxis"></canvas>
+                        </div>
+                        
+                        <!-- Dữ liệu có thể cuộn -->
+                        <div class="flex-1 h-full overflow-x-auto custom-scrollbar relative">
+                            <div class="min-w-[800px] h-full">
+                                <canvas id="trendChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-center gap-6 mt-3">
+                         <div class="flex items-center gap-1"><div class="w-3 h-1 bg-red-500 rounded"></div><span class="text-[10px] text-slate-500 font-bold">Chi tiêu</span></div>
+                         <div class="flex items-center gap-1"><div class="w-3 h-3 bg-emerald-500 rounded-sm"></div><span class="text-[10px] text-slate-500 font-bold">Thu nhập</span></div>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -204,6 +250,11 @@
 
         let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
         let chartInstance = null;
+        let trendChartInstance = null; // Biểu đồ dữ liệu
+        let trendAxisInstance = null;  // Biểu đồ trục Y cố định
+        
+        // --- BIẾN MỚI CHO THỐNG KÊ ---
+        let currentAnalysisMode = 'month'; // 'month' hoặc 'year'
 
         function saveState() {
             localStorage.setItem(DB_KEY, JSON.stringify(state));
@@ -214,6 +265,7 @@
             const stored = localStorage.getItem(DB_KEY);
             if (stored) state = JSON.parse(stored);
             updateUI();
+            populateYearPicker();
         }
 
         function formatVND(amount) {
@@ -225,17 +277,24 @@
         }
 
         function formatCurrencyInput(input) {
+            // Kiểm tra xem người dùng có đang nhập dấu trừ không
+            const isNegative = input.value.trim().startsWith('-');
+            
             // Loại bỏ tất cả ký tự không phải số
-            let value = input.value.replace(/\D/g, "");
+            let rawDigits = input.value.replace(/\D/g, "");
             
-            // Lưu giá trị thực vào hidden input
-            document.getElementById('amountInput').value = value;
+            // Xử lý giá trị cho input ẩn (để lưu vào state)
+            let finalValue = rawDigits;
+            if (isNegative && rawDigits.length > 0) {
+                finalValue = '-' + rawDigits;
+            }
+            document.getElementById('amountInput').value = finalValue;
             
-            // Định dạng hiển thị với dấu chấm
-            if (value === "") {
-                input.value = "";
+            // Xử lý hiển thị (thêm dấu chấm phân cách ngàn)
+            if (rawDigits === "") {
+                input.value = isNegative ? "-" : "";
             } else {
-                input.value = formatNumber(value);
+                input.value = (isNegative ? "-" : "") + formatNumber(rawDigits);
             }
         }
 
@@ -245,7 +304,10 @@
             document.getElementById(`tab-${tabId}`).classList.add('active');
             document.getElementById(`btn-${tabId}`).classList.add('active');
             document.getElementById('pageTitle').textContent = title;
-            if (tabId === 'analysis') updateAnalysis();
+            if (tabId === 'analysis') {
+                populateYearPicker();
+                updateAnalysis();
+            }
             if (tabId === 'history') {
                 clearSearch();
                 renderHistoryTree();
@@ -519,24 +581,113 @@
                 }}
             ]);
         }
+        
+        // --- LOGIC MỚI CHO THỐNG KÊ ---
+        function changeAnalysisMode(mode) {
+            currentAnalysisMode = mode;
+            const mBtn = document.getElementById('btnModeMonth');
+            const yBtn = document.getElementById('btnModeYear');
+            const mPicker = document.getElementById('analysisMonthPicker');
+            const yPicker = document.getElementById('analysisYearPicker');
+
+            if(mode === 'month') {
+                mBtn.className = "px-3 py-1 text-xs font-bold rounded-md bg-white shadow-sm text-indigo-600 transition";
+                yBtn.className = "px-3 py-1 text-xs font-bold rounded-md text-slate-500 transition";
+                mPicker.classList.remove('hidden');
+                yPicker.classList.add('hidden');
+            } else {
+                yBtn.className = "px-3 py-1 text-xs font-bold rounded-md bg-white shadow-sm text-indigo-600 transition";
+                mBtn.className = "px-3 py-1 text-xs font-bold rounded-md text-slate-500 transition";
+                yPicker.classList.remove('hidden');
+                mPicker.classList.add('hidden');
+            }
+            updateAnalysis();
+        }
+
+        function populateYearPicker() {
+            const picker = document.getElementById('analysisYearPicker');
+            const currentYear = new Date().getFullYear();
+            // Lấy danh sách năm từ dữ liệu, nếu không có thì mặc định năm nay
+            let years = new Set(state.transactions.map(t => parseInt(t.date.substring(0, 4))));
+            years.add(currentYear);
+            years = Array.from(years).sort((a,b) => b - a);
+
+            picker.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+            if(!picker.value) picker.value = currentYear;
+        }
 
         function updateAnalysis() {
-            const picker = document.getElementById('analysisMonthPicker');
-            if (!picker.value) picker.value = new Date().toISOString().substring(0, 7);
-            const [y, m] = picker.value.split('-');
-            
+            // --- Logic cho biểu đồ tròn (Doughnut) cũ ---
             const groupTotals = {};
             state.expenseGroups.forEach(g => groupTotals[g.id] = { name: g.name, color: g.color, total: 0 });
-            
             let totalExpense = 0;
-            state.transactions.filter(t => t.type === 'expense' && t.date.startsWith(`${y}-${m}`)).forEach(t => {
-                const group = state.expenseGroups.find(g => g.categories.includes(t.category)) || state.expenseGroups[state.expenseGroups.length-1];
-                if (group && groupTotals[group.id]) {
-                    groupTotals[group.id].total += t.amount;
-                    totalExpense += t.amount;
-                }
-            });
 
+            // --- Logic mới cho biểu đồ đường (Line/Bar Chart) ---
+            let trendLabels = [];
+            let trendValuesExpense = [];
+            let trendValuesIncome = [];
+
+            if (currentAnalysisMode === 'month') {
+                // CHẾ ĐỘ THÁNG
+                const picker = document.getElementById('analysisMonthPicker');
+                if (!picker.value) picker.value = new Date().toISOString().substring(0, 7);
+                const [y, m] = picker.value.split('-');
+                
+                // Lọc dữ liệu cho Doughnut
+                state.transactions.filter(t => t.type === 'expense' && t.date.startsWith(`${y}-${m}`)).forEach(t => {
+                    const group = state.expenseGroups.find(g => g.categories.includes(t.category)) || state.expenseGroups[state.expenseGroups.length-1];
+                    if (group && groupTotals[group.id]) {
+                        groupTotals[group.id].total += t.amount;
+                        totalExpense += t.amount;
+                    }
+                });
+
+                // Chuẩn bị dữ liệu cho Mixed Chart
+                const year = parseInt(y);
+                const month = parseInt(m);
+                const daysInMonth = new Date(year, month, 0).getDate(); 
+                
+                trendValuesExpense = new Array(daysInMonth).fill(0);
+                trendValuesIncome = new Array(daysInMonth).fill(0);
+                trendLabels = Array.from({length: daysInMonth}, (_, i) => `${i + 1}`); 
+
+                state.transactions.forEach(t => {
+                    if (t.date.startsWith(`${y}-${m}`)) {
+                        const day = parseInt(t.date.split('-')[2]);
+                        if(t.type === 'expense') trendValuesExpense[day - 1] += t.amount;
+                        else trendValuesIncome[day - 1] += t.amount;
+                    }
+                });
+
+            } else {
+                // CHẾ ĐỘ NĂM
+                const picker = document.getElementById('analysisYearPicker');
+                const selectedYear = picker.value || new Date().getFullYear().toString();
+
+                // Lọc dữ liệu cho Doughnut
+                state.transactions.filter(t => t.type === 'expense' && t.date.startsWith(selectedYear)).forEach(t => {
+                    const group = state.expenseGroups.find(g => g.categories.includes(t.category)) || state.expenseGroups[state.expenseGroups.length-1];
+                    if (group && groupTotals[group.id]) {
+                        groupTotals[group.id].total += t.amount;
+                        totalExpense += t.amount;
+                    }
+                });
+
+                // Chuẩn bị dữ liệu cho Line Chart
+                trendValuesExpense = new Array(12).fill(0);
+                trendValuesIncome = new Array(12).fill(0);
+                trendLabels = Array.from({length: 12}, (_, i) => `T${i + 1}`);
+
+                state.transactions.forEach(t => {
+                    if (t.date.startsWith(selectedYear)) {
+                        const monthIdx = parseInt(t.date.split('-')[1]) - 1;
+                        if(t.type === 'expense') trendValuesExpense[monthIdx] += t.amount;
+                        else trendValuesIncome[monthIdx] += t.amount;
+                    }
+                });
+            }
+
+            // --- Render Doughnut Chart ---
             document.getElementById('chartTotalValue').textContent = formatVND(totalExpense);
             const activeGroups = Object.values(groupTotals).filter(g => g.total > 0);
 
@@ -556,6 +707,118 @@
                     <span class="text-xs font-bold text-slate-800">${formatVND(g.total)}</span>
                 </div>
             `).join('');
+
+            // --- CẤU HÌNH BIỂU ĐỒ 2 PHẦN (Cố định trục Y & Cuộn dữ liệu) ---
+            const ctxTrend = document.getElementById('trendChart').getContext('2d');
+            const ctxAxis = document.getElementById('trendYAxis').getContext('2d');
+            
+            if (trendChartInstance) trendChartInstance.destroy();
+            if (trendAxisInstance) trendAxisInstance.destroy();
+
+            // Tính toán max scale để đồng bộ 2 biểu đồ
+            const maxVal = Math.max(...trendValuesExpense, ...trendValuesIncome) * 1.1; // Thêm 10% đệm
+            
+            // Cấu hình Dataset tùy theo chế độ
+            let datasets = [];
+            if(currentAnalysisMode === 'month') {
+                datasets = [
+                    {
+                        type: 'line',
+                        label: 'Chi tiêu',
+                        data: trendValuesExpense,
+                        borderColor: '#ef4444',
+                        backgroundColor: '#ef4444',
+                        tension: 0.4,
+                        borderWidth: 2,
+                        pointRadius: 2,
+                        order: 1
+                    },
+                    {
+                        type: 'bar',
+                        label: 'Thu nhập',
+                        data: trendValuesIncome,
+                        backgroundColor: '#10b981',
+                        borderRadius: 4,
+                        barThickness: 8,
+                        order: 2
+                    }
+                ];
+            } else {
+                datasets = [
+                    {
+                        type: 'line',
+                        label: 'Chi tiêu',
+                        data: trendValuesExpense,
+                        borderColor: '#ef4444',
+                        backgroundColor: '#ef4444',
+                        tension: 0.4,
+                        borderWidth: 2,
+                        pointRadius: 3
+                    },
+                    {
+                        type: 'line',
+                        label: 'Thu nhập',
+                        data: trendValuesIncome,
+                        borderColor: '#10b981',
+                        backgroundColor: '#10b981',
+                        tension: 0.4,
+                        borderWidth: 2,
+                        pointRadius: 3
+                    }
+                ];
+            }
+
+            // 1. Biểu đồ dữ liệu (Ẩn trục Y, hiện trục X, cho phép cuộn)
+            trendChartInstance = new Chart(ctxTrend, {
+                data: { labels: trendLabels, datasets: datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { 
+                            display: false, // Ẩn trục Y
+                            min: 0, 
+                            max: maxVal 
+                        },
+                        x: { 
+                            grid: { display: false },
+                            ticks: { font: { size: 10, weight: 'bold' }, color: '#64748b' }
+                        }
+                    }
+                }
+            });
+
+            // 2. Biểu đồ Trục Y cố định (Chỉ hiện trục Y, ẩn mọi thứ khác)
+            trendAxisInstance = new Chart(ctxAxis, {
+                type: 'bar', // Dummy type
+                data: { labels: [], datasets: [] },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                    layout: { padding: { bottom: 20 } }, // Căn chỉnh để khớp với trục X bên kia
+                    scales: {
+                        y: {
+                            position: 'left',
+                            min: 0,
+                            max: maxVal,
+                            grid: { display: false },
+                            ticks: {
+                                callback: function(value) {
+                                    if (value >= 1000000) return (value/1000000).toFixed(1) + 'M';
+                                    if (value >= 1000) return (value/1000).toFixed(0) + 'k';
+                                    return value;
+                                },
+                                font: { size: 9, weight: 'bold' }, color: '#94a3b8', padding: 0
+                            },
+                            border: { display: false }
+                        },
+                        x: { display: false }
+                    }
+                }
+            });
         }
 
         function openDialog(title, bodyHtml, actions) {
@@ -625,8 +888,10 @@
             e.preventDefault();
             const rawAmount = document.getElementById('amountInput').value;
             const amount = parseFloat(rawAmount);
-            if (isNaN(amount) || amount <= 0) {
-                openDialog('Lỗi', 'Vui lòng nhập số tiền hợp lệ.');
+            
+            // Logic mới: Chấp nhận số âm, chỉ chặn 0 hoặc NaN
+            if (isNaN(amount) || amount === 0) {
+                openDialog('Lỗi', 'Vui lòng nhập số tiền hợp lệ (khác 0).');
                 return;
             }
             
@@ -650,4 +915,3 @@
     </script>
 </body>
 </html>
-
