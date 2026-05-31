@@ -25,7 +25,7 @@
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
         }
         /* Style cho thanh cuộn tùy chỉnh để trông mượt hơn */
-        .custom-scrollbar::-webkit-scrollbar { height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar { height: 4px; width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
@@ -74,7 +74,7 @@
 
                     <div>
                         <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Số tiền (₫)</label>
-                        <input type="text" || event.charCode == 45" id="amountDisplayInput" inputmode="decimal" placeholder="0" class="w-full bg-slate-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 font-bold text-xl text-right" oninput="formatCurrencyInput(this)" required>
+                        <input type="text" id="amountDisplayInput" inputmode="decimal" placeholder="0" class="w-full bg-slate-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 font-bold text-xl text-right" oninput="formatCurrencyInput(this)" required>
                         <input type="hidden" id="amountInput">
                     </div>
 
@@ -132,7 +132,8 @@
                         <span id="chartTotalValue" class="text-lg font-bold text-slate-800">0 ₫</span>
                     </div>
                 </div>
-                <div id="groupSummaryList" class="space-y-4"></div>
+                <!-- Danh sách nhóm (có thể click) -->
+                <div id="groupSummaryList" class="space-y-2"></div>
 
                 <!-- BIỂU ĐỒ XU HƯỚNG CẢI TIẾN -->
                 <div class="mt-8 pt-6 border-t border-slate-100">
@@ -141,7 +142,6 @@
                     <!-- Container chính chứa 2 biểu đồ -->
                     <div class="flex h-64 relative">
                         <!-- Cột Y-Axis Cố định -->
-                        <!-- ĐÃ SỬA: Tăng width từ w-12 lên w-16 để hiển thị hết số -->
                         <div class="w-16 h-full flex-shrink-0 bg-white z-10 border-r border-slate-100">
                             <canvas id="trendYAxis"></canvas>
                         </div>
@@ -228,8 +228,8 @@
 
     <!-- Modal Overlay -->
     <div id="dialogOverlay" class="fixed inset-0 bg-black/40 hidden z-[100] items-center justify-center p-6 backdrop-blur-sm">
-        <div id="dialogBox" class="bg-white rounded-3xl p-6 w-full max-w-xs shadow-2xl">
-            <h3 id="dialogTitle" class="font-bold text-slate-800 mb-2"></h3>
+        <div id="dialogBox" class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl transition-all">
+            <h3 id="dialogTitle" class="font-bold text-slate-800 mb-4 text-center"></h3>
             <div id="dialogBody" class="mb-6"></div>
             <div id="dialogActions" class="flex gap-2"></div>
         </div>
@@ -250,11 +250,9 @@
 
         let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
         let chartInstance = null;
-        let trendChartInstance = null; // Biểu đồ dữ liệu
-        let trendAxisInstance = null;  // Biểu đồ trục Y cố định
-        
-        // --- BIẾN MỚI CHO THỐNG KÊ ---
-        let currentAnalysisMode = 'month'; // 'month' hoặc 'year'
+        let trendChartInstance = null; 
+        let trendAxisInstance = null;  
+        let currentAnalysisMode = 'month';
 
         function saveState() {
             localStorage.setItem(DB_KEY, JSON.stringify(state));
@@ -277,25 +275,27 @@
         }
 
         function formatCurrencyInput(input) {
-            // Kiểm tra xem người dùng có đang nhập dấu trừ không
             const isNegative = input.value.trim().startsWith('-');
-            
-            // Loại bỏ tất cả ký tự không phải số
             let rawDigits = input.value.replace(/\D/g, "");
-            
-            // Xử lý giá trị cho input ẩn (để lưu vào state)
             let finalValue = rawDigits;
             if (isNegative && rawDigits.length > 0) {
                 finalValue = '-' + rawDigits;
             }
             document.getElementById('amountInput').value = finalValue;
             
-            // Xử lý hiển thị (thêm dấu chấm phân cách ngàn)
             if (rawDigits === "") {
                 input.value = isNegative ? "-" : "";
             } else {
                 input.value = (isNegative ? "-" : "") + formatNumber(rawDigits);
             }
+        }
+
+        // --- HÀM MỚI: Định dạng cho Input sửa tiền ---
+        function formatEditCurrencyInput(input) {
+            let rawDigits = input.value.replace(/\D/g, "");
+            document.getElementById('editAmountVal').value = rawDigits; 
+            if (rawDigits === "") input.value = "";
+            else input.value = formatNumber(rawDigits);
         }
 
         function switchTab(tabId, title) {
@@ -391,13 +391,19 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="flex items-center gap-3">
+                            <div class="flex flex-col items-end gap-1">
                                 <p class="font-bold text-sm ${t.type === 'income' ? 'text-emerald-600' : 'text-slate-800'}">
                                     ${t.type === 'income' ? '+' : ''}${formatVND(t.amount)}
                                 </p>
-                                <button onclick="deleteTransaction('${t.id}')" class="text-slate-200 hover:text-red-500 transition-colors">
-                                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7a2 2 0 01-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                                </button>
+                                <div class="flex items-center gap-2">
+                                    <!-- Nút Sửa Mới Thêm -->
+                                    <button onclick="editTransaction('${t.id}')" class="p-1 text-slate-300 hover:text-indigo-500 transition-colors">
+                                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                    </button>
+                                    <button onclick="deleteTransaction('${t.id}')" class="p-1 text-slate-300 hover:text-red-500 transition-colors">
+                                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7a2 2 0 01-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     `).join('')}
@@ -433,7 +439,7 @@
                     </div>
                     <div class="space-y-2">
                         ${data.items.map(t => `
-                            <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-50 flex items-center justify-between">
+                            <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-50 flex items-center justify-between group">
                                 <div class="flex items-center gap-3">
                                     <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-[8px] ${t.type === 'income' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}">
                                         ${t.type === 'income' ? 'THU' : 'CHI'}
@@ -443,13 +449,19 @@
                                         <p class="text-[9px] text-slate-400 font-medium">${t.note || '---'}</p>
                                     </div>
                                 </div>
-                                <div class="flex items-center gap-3">
+                                <div class="flex items-center gap-4">
                                     <p class="font-bold text-xs ${t.type === 'income' ? 'text-emerald-600' : 'text-slate-800'}">
                                         ${t.type === 'income' ? '+' : ''}${formatVND(t.amount).replace('₫', '').trim()}
                                     </p>
-                                    <button onclick="deleteTransaction('${t.id}')" class="text-slate-200 active:text-red-500">
-                                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7a2 2 0 01-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                                    </button>
+                                    <div class="flex items-center gap-1 border-l pl-2 border-slate-100">
+                                        <!-- Nút Sửa Mới Thêm -->
+                                        <button onclick="editTransaction('${t.id}')" class="p-1 text-slate-200 active:text-indigo-500 hover:text-indigo-500 transition">
+                                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                        </button>
+                                        <button onclick="deleteTransaction('${t.id}')" class="p-1 text-slate-200 active:text-red-500 hover:text-red-500 transition">
+                                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7a2 2 0 01-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         `).join('')}
@@ -516,11 +528,17 @@
                                                             <p class="text-[9px] text-slate-400 font-medium">${t.note || '---'}</p>
                                                         </div>
                                                     </div>
-                                                    <div class="flex items-center gap-2">
+                                                    <div class="flex items-center gap-3">
                                                         <span class="text-xs font-bold ${t.type === 'income' ? 'text-emerald-600' : 'text-slate-700'}">${formatVND(t.amount)}</span>
-                                                        <button onclick="deleteTransaction('${t.id}')" class="text-slate-300 ml-1">
-                                                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7a2 2 0 01-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                                                        </button>
+                                                        <div class="flex items-center gap-1 border-l pl-2 border-slate-200">
+                                                            <!-- Nút Sửa Mới Thêm -->
+                                                            <button onclick="editTransaction('${t.id}')" class="p-1 text-slate-300 hover:text-indigo-500">
+                                                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                                            </button>
+                                                            <button onclick="deleteTransaction('${t.id}')" class="p-1 text-slate-300 hover:text-red-500">
+                                                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7a2 2 0 01-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             `).join('')}
@@ -567,22 +585,71 @@
                 </select>`;
         }
 
+        // --- HÀM MỚI: Sửa Giao Dịch ---
+        function editTransaction(id) {
+            const t = state.transactions.find(x => x.id === id);
+            if (!t) return;
+
+            const html = `
+                <div class="space-y-4 text-left">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Số tiền (${t.type === 'income' ? 'Thu' : 'Chi'})</label>
+                        <input type="text" id="editAmountDisplay" value="${formatNumber(Math.abs(t.amount))}" class="w-full bg-slate-50 rounded-xl px-4 py-3 font-bold text-xl text-right focus:ring-2 focus:ring-indigo-500" oninput="formatEditCurrencyInput(this)" inputmode="decimal">
+                        <input type="hidden" id="editAmountVal" value="${Math.abs(t.amount)}">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Ghi chú</label>
+                        <input type="text" id="editNote" value="${t.note || ''}" class="w-full bg-slate-50 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Ngày</label>
+                        <input type="date" id="editDate" value="${t.date}" class="w-full bg-slate-50 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+            `;
+
+            openDialog('Chỉnh sửa', html, [
+                { label: 'Hủy', class: 'flex-1 py-3 font-bold text-slate-500 bg-slate-100 rounded-xl', onClick: closeDialog },
+                { label: 'Lưu thay đổi', class: 'flex-1 py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-md', onClick: () => {
+                    const newAmountStr = document.getElementById('editAmountVal').value;
+                    const newAmount = parseFloat(newAmountStr);
+                    const newNote = document.getElementById('editNote').value.trim();
+                    const newDate = document.getElementById('editDate').value;
+
+                    if (!isNaN(newAmount) && newAmount > 0) {
+                        // Giữ nguyên loại giao dịch (t.type), cập nhật dữ liệu
+                        t.amount = newAmount;
+                        t.note = newNote;
+                        t.date = newDate;
+                        saveState();
+                        
+                        // Render lại đúng tab đang mở
+                        if (document.getElementById('tab-home').classList.contains('active')) updateUI();
+                        if (document.getElementById('tab-history').classList.contains('active')) { handleSearch(); renderHistoryTree(); }
+                        if (document.getElementById('tab-analysis').classList.contains('active')) updateAnalysis();
+                        
+                        closeDialog();
+                    } else {
+                        alert("Vui lòng nhập số tiền hợp lệ!");
+                    }
+                }}
+            ]);
+        }
+
         function deleteTransaction(id) {
             openDialog('Xác nhận xóa', '<p class="text-xs text-center text-slate-500">Dữ liệu này sẽ được xóa vĩnh viễn.</p>', [
-                { label: 'Hủy', class: 'flex-1 py-3 font-bold text-slate-400', onClick: closeDialog },
+                { label: 'Hủy', class: 'flex-1 py-3 font-bold text-slate-400 bg-slate-100 rounded-xl', onClick: closeDialog },
                 { label: 'Xóa', class: 'flex-1 py-3 bg-red-600 text-white font-bold rounded-xl', onClick: () => {
                     state.transactions = state.transactions.filter(t => t.id !== id);
                     saveState();
-                    if(document.getElementById('tab-history').classList.contains('active')) {
-                        handleSearch();
-                        renderHistoryTree();
-                    }
+                    if(document.getElementById('tab-home').classList.contains('active')) updateUI();
+                    if(document.getElementById('tab-history').classList.contains('active')) { handleSearch(); renderHistoryTree(); }
+                    if(document.getElementById('tab-analysis').classList.contains('active')) updateAnalysis();
                     closeDialog();
                 }}
             ]);
         }
         
-        // --- LOGIC MỚI CHO THỐNG KÊ ---
         function changeAnalysisMode(mode) {
             currentAnalysisMode = mode;
             const mBtn = document.getElementById('btnModeMonth');
@@ -607,7 +674,6 @@
         function populateYearPicker() {
             const picker = document.getElementById('analysisYearPicker');
             const currentYear = new Date().getFullYear();
-            // Lấy danh sách năm từ dữ liệu, nếu không có thì mặc định năm nay
             let years = new Set(state.transactions.map(t => parseInt(t.date.substring(0, 4))));
             years.add(currentYear);
             years = Array.from(years).sort((a,b) => b - a);
@@ -617,23 +683,19 @@
         }
 
         function updateAnalysis() {
-            // --- Logic cho biểu đồ tròn (Doughnut) cũ ---
             const groupTotals = {};
-            state.expenseGroups.forEach(g => groupTotals[g.id] = { name: g.name, color: g.color, total: 0 });
+            state.expenseGroups.forEach(g => groupTotals[g.id] = { id: g.id, name: g.name, color: g.color, total: 0 });
             let totalExpense = 0;
 
-            // --- Logic mới cho biểu đồ đường (Line/Bar Chart) ---
             let trendLabels = [];
             let trendValuesExpense = [];
             let trendValuesIncome = [];
 
             if (currentAnalysisMode === 'month') {
-                // CHẾ ĐỘ THÁNG
                 const picker = document.getElementById('analysisMonthPicker');
                 if (!picker.value) picker.value = new Date().toISOString().substring(0, 7);
                 const [y, m] = picker.value.split('-');
                 
-                // Lọc dữ liệu cho Doughnut
                 state.transactions.filter(t => t.type === 'expense' && t.date.startsWith(`${y}-${m}`)).forEach(t => {
                     const group = state.expenseGroups.find(g => g.categories.includes(t.category)) || state.expenseGroups[state.expenseGroups.length-1];
                     if (group && groupTotals[group.id]) {
@@ -642,7 +704,6 @@
                     }
                 });
 
-                // Chuẩn bị dữ liệu cho Mixed Chart
                 const year = parseInt(y);
                 const month = parseInt(m);
                 const daysInMonth = new Date(year, month, 0).getDate(); 
@@ -660,11 +721,9 @@
                 });
 
             } else {
-                // CHẾ ĐỘ NĂM
                 const picker = document.getElementById('analysisYearPicker');
                 const selectedYear = picker.value || new Date().getFullYear().toString();
 
-                // Lọc dữ liệu cho Doughnut
                 state.transactions.filter(t => t.type === 'expense' && t.date.startsWith(selectedYear)).forEach(t => {
                     const group = state.expenseGroups.find(g => g.categories.includes(t.category)) || state.expenseGroups[state.expenseGroups.length-1];
                     if (group && groupTotals[group.id]) {
@@ -673,7 +732,6 @@
                     }
                 });
 
-                // Chuẩn bị dữ liệu cho Line Chart
                 trendValuesExpense = new Array(12).fill(0);
                 trendValuesIncome = new Array(12).fill(0);
                 trendLabels = Array.from({length: 12}, (_, i) => `T${i + 1}`);
@@ -687,9 +745,8 @@
                 });
             }
 
-            // --- Render Doughnut Chart ---
             document.getElementById('chartTotalValue').textContent = formatVND(totalExpense);
-            const activeGroups = Object.values(groupTotals).filter(g => g.total > 0);
+            const activeGroups = Object.values(groupTotals).filter(g => g.total > 0).sort((a,b) => b.total - a.total); // Sắp xếp từ lớn tới bé
 
             if (chartInstance) chartInstance.destroy();
             chartInstance = new Chart(document.getElementById('financeChart'), {
@@ -701,124 +758,126 @@
                 options: { responsive: true, maintainAspectRatio: false, cutout: '80%', plugins: { legend: { display: false } } }
             });
 
+            // --- CẬP NHẬT GIAO DIỆN DANH SÁCH NHÓM (CÓ THỂ BẤM VÀO) ---
             document.getElementById('groupSummaryList').innerHTML = activeGroups.map(g => `
-                <div class="flex justify-between items-center">
-                    <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full" style="background-color: ${g.color}"></div><span class="text-xs font-bold text-slate-700 uppercase">${g.name}</span></div>
-                    <span class="text-xs font-bold text-slate-800">${formatVND(g.total)}</span>
+                <div onclick="showGroupDetails('${g.id}')" class="flex justify-between items-center cursor-pointer p-3 bg-slate-50 hover:bg-slate-100 rounded-xl transition border border-transparent hover:border-slate-200">
+                    <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded-full shadow-sm" style="background-color: ${g.color}"></div>
+                        <span class="text-xs font-bold text-slate-700 uppercase">${g.name}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-slate-800">${formatVND(g.total)}</span>
+                        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </div>
                 </div>
             `).join('');
 
-            // --- CẤU HÌNH BIỂU ĐỒ 2 PHẦN (Cố định trục Y & Cuộn dữ liệu) ---
             const ctxTrend = document.getElementById('trendChart').getContext('2d');
             const ctxAxis = document.getElementById('trendYAxis').getContext('2d');
             
             if (trendChartInstance) trendChartInstance.destroy();
             if (trendAxisInstance) trendAxisInstance.destroy();
 
-            // Tính toán max scale để đồng bộ 2 biểu đồ
-            const maxVal = Math.max(...trendValuesExpense, ...trendValuesIncome) * 1.1; // Thêm 10% đệm
+            const maxVal = Math.max(...trendValuesExpense, ...trendValuesIncome) * 1.1; 
             
-            // Cấu hình Dataset tùy theo chế độ
             let datasets = [];
             if(currentAnalysisMode === 'month') {
                 datasets = [
-                    {
-                        type: 'line',
-                        label: 'Chi tiêu',
-                        data: trendValuesExpense,
-                        borderColor: '#ef4444',
-                        backgroundColor: '#ef4444',
-                        tension: 0.4,
-                        borderWidth: 2,
-                        pointRadius: 2,
-                        order: 1
-                    },
-                    {
-                        type: 'bar',
-                        label: 'Thu nhập',
-                        data: trendValuesIncome,
-                        backgroundColor: '#10b981',
-                        borderRadius: 4,
-                        barThickness: 8,
-                        order: 2
-                    }
+                    { type: 'line', label: 'Chi tiêu', data: trendValuesExpense, borderColor: '#ef4444', backgroundColor: '#ef4444', tension: 0.4, borderWidth: 2, pointRadius: 2, order: 1 },
+                    { type: 'bar', label: 'Thu nhập', data: trendValuesIncome, backgroundColor: '#10b981', borderRadius: 4, barThickness: 8, order: 2 }
                 ];
             } else {
                 datasets = [
-                    {
-                        type: 'line',
-                        label: 'Chi tiêu',
-                        data: trendValuesExpense,
-                        borderColor: '#ef4444',
-                        backgroundColor: '#ef4444',
-                        tension: 0.4,
-                        borderWidth: 2,
-                        pointRadius: 3
-                    },
-                    {
-                        type: 'line',
-                        label: 'Thu nhập',
-                        data: trendValuesIncome,
-                        borderColor: '#10b981',
-                        backgroundColor: '#10b981',
-                        tension: 0.4,
-                        borderWidth: 2,
-                        pointRadius: 3
-                    }
+                    { type: 'line', label: 'Chi tiêu', data: trendValuesExpense, borderColor: '#ef4444', backgroundColor: '#ef4444', tension: 0.4, borderWidth: 2, pointRadius: 3 },
+                    { type: 'line', label: 'Thu nhập', data: trendValuesIncome, borderColor: '#10b981', backgroundColor: '#10b981', tension: 0.4, borderWidth: 2, pointRadius: 3 }
                 ];
             }
 
-            // 1. Biểu đồ dữ liệu (Ẩn trục Y, hiện trục X, cho phép cuộn)
             trendChartInstance = new Chart(ctxTrend, {
                 data: { labels: trendLabels, datasets: datasets },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: { mode: 'index', intersect: false },
+                    responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
                     plugins: { legend: { display: false } },
                     scales: {
-                        y: { 
-                            display: false, // Ẩn trục Y
-                            min: 0, 
-                            max: maxVal 
-                        },
-                        x: { 
-                            grid: { display: false },
-                            ticks: { font: { size: 10, weight: 'bold' }, color: '#64748b' }
-                        }
+                        y: { display: false, min: 0, max: maxVal },
+                        x: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' }, color: '#64748b' } }
                     }
                 }
             });
 
-            // 2. Biểu đồ Trục Y cố định (Chỉ hiện trục Y, ẩn mọi thứ khác)
             trendAxisInstance = new Chart(ctxAxis, {
-                type: 'bar', // Dummy type
-                data: { labels: [], datasets: [] },
+                type: 'bar', data: { labels: [], datasets: [] },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                    layout: { padding: { bottom: 20 } }, // Căn chỉnh để khớp với trục X bên kia
+                    responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                    layout: { padding: { bottom: 20 } },
                     scales: {
                         y: {
-                            position: 'left',
-                            min: 0,
-                            max: maxVal,
-                            grid: { display: false },
+                            position: 'left', min: 0, max: maxVal, grid: { display: false },
                             ticks: {
                                 callback: function(value) {
                                     if (value >= 1000000) return (value/1000000).toFixed(1) + 'M';
                                     if (value >= 1000) return (value/1000).toFixed(0) + 'k';
                                     return value;
-                                },
-                                font: { size: 9, weight: 'bold' }, color: '#94a3b8', padding: 0
-                            },
-                            border: { display: false }
-                        },
-                        x: { display: false }
+                                }, font: { size: 9, weight: 'bold' }, color: '#94a3b8', padding: 0
+                            }, border: { display: false }
+                        }, x: { display: false }
                     }
                 }
             });
+        }
+
+        // --- HÀM MỚI: Hiển thị chi tiết theo nhóm bên tab phân tích ---
+        function showGroupDetails(groupId) {
+            const group = state.expenseGroups.find(g => g.id === groupId);
+            if (!group) return;
+
+            let datePrefix = '';
+            let dateTitle = '';
+            if (currentAnalysisMode === 'month') {
+                const picker = document.getElementById('analysisMonthPicker');
+                const [y, m] = (picker.value || new Date().toISOString().substring(0, 7)).split('-');
+                datePrefix = `${y}-${m}`;
+                dateTitle = `Tháng ${m}/${y}`;
+            } else {
+                const picker = document.getElementById('analysisYearPicker');
+                datePrefix = picker.value || new Date().getFullYear().toString();
+                dateTitle = `Năm ${datePrefix}`;
+            }
+
+            const groupTxs = state.transactions.filter(t =>
+                t.type === 'expense' &&
+                t.date.startsWith(datePrefix) &&
+                group.categories.includes(t.category)
+            ).sort((a, b) => b.date.localeCompare(a.date));
+
+            if (groupTxs.length === 0) return;
+
+            const total = groupTxs.reduce((sum, t) => sum + t.amount, 0);
+
+            let listHtml = `
+                <div class="mb-4 text-center">
+                    <p class="text-xs text-slate-500 font-medium">Tổng chi ${dateTitle}</p>
+                    <p class="text-xl font-bold text-slate-800">${formatVND(total)}</p>
+                </div>
+                <div class="max-h-72 overflow-y-auto custom-scrollbar space-y-2 pr-2">
+            `;
+            
+            groupTxs.forEach(t => {
+                listHtml += `
+                    <div class="bg-slate-50 p-3 rounded-xl flex justify-between items-center border border-slate-100">
+                        <div>
+                            <p class="text-[11px] font-bold text-slate-800">${t.date.split('-').reverse().join('/')} - <span class="text-indigo-600">${t.category}</span></p>
+                            <p class="text-[10px] text-slate-500 mt-0.5">${t.note || 'Không có ghi chú'}</p>
+                        </div>
+                        <p class="text-xs font-bold text-red-500">-${formatVND(t.amount)}</p>
+                    </div>
+                `;
+            });
+            listHtml += `</div>`;
+
+            openDialog(group.name, listHtml, [
+                { label: 'Đóng', class: 'w-full py-3 bg-slate-900 text-white font-bold rounded-xl', onClick: closeDialog }
+            ]);
         }
 
         function openDialog(title, bodyHtml, actions) {
@@ -854,12 +913,12 @@
                 </div>`).join('');
         }
 
-        function openAddCategoryModal(type) { openDialog('Thêm danh mục', '<input id="modalInput" class="w-full bg-slate-100 rounded-xl p-3 text-sm" placeholder="Tên danh mục">', [{label:'Hủy', onClick:closeDialog},{label:'Thêm', class:'bg-indigo-600 text-white rounded-xl py-3 flex-1 font-bold', onClick:() => { const v = document.getElementById('modalInput').value.trim(); if(v){ state.incomeCategories.push(v); saveState(); renderSettings(); closeDialog(); }}}])}
+        function openAddCategoryModal(type) { openDialog('Thêm danh mục', '<input id="modalInput" class="w-full bg-slate-100 rounded-xl p-3 text-sm" placeholder="Tên danh mục">', [{label:'Hủy', class:'flex-1 py-3 font-bold text-slate-500 bg-slate-100 rounded-xl', onClick:closeDialog},{label:'Thêm', class:'bg-indigo-600 text-white rounded-xl py-3 flex-1 font-bold', onClick:() => { const v = document.getElementById('modalInput').value.trim(); if(v){ state.incomeCategories.push(v); saveState(); renderSettings(); closeDialog(); }}}])}
         function removeIncomeCategory(n) { state.incomeCategories = state.incomeCategories.filter(c=>c!==n); saveState(); renderSettings(); }
         function removeGroup(id) { state.expenseGroups = state.expenseGroups.filter(g=>g.id!==id); saveState(); renderSettings(); }
         function removeCategoryFromGroup(gId, cN) { const g = state.expenseGroups.find(x=>x.id===gId); if(g) g.categories = g.categories.filter(c=>c!==cN); saveState(); renderSettings(); }
-        function openAddCategoryToGroupModal(gId) { openDialog('Thêm vào nhóm', '<input id="catName" class="w-full bg-slate-100 rounded-xl p-3 text-sm" placeholder="Tên danh mục">', [{label:'Hủy', onClick:closeDialog},{label:'Lưu', class:'bg-indigo-600 text-white rounded-xl py-3 flex-1 font-bold', onClick:() => { const n = document.getElementById('catName').value.trim(); if(n){ const g = state.expenseGroups.find(x=>x.id===gId); if(g && !g.categories.includes(n)) g.categories.push(n); saveState(); renderSettings(); closeDialog(); }}}])}
-        function openAddGroupModal() { openDialog('Nhóm mới', '<input id="groupName" class="w-full bg-slate-100 rounded-xl p-3 text-sm" placeholder="Tên nhóm">', [{label:'Hủy', onClick:closeDialog},{label:'Tạo', class:'bg-indigo-600 text-white rounded-xl py-3 flex-1 font-bold', onClick:() => { const n = document.getElementById('groupName').value.trim(); if(n){ state.expenseGroups.push({id:'g'+Date.now(), name:n, color:'#'+Math.floor(Math.random()*16777215).toString(16), categories:[]}); saveState(); renderSettings(); closeDialog(); }}}])}
+        function openAddCategoryToGroupModal(gId) { openDialog('Thêm vào nhóm', '<input id="catName" class="w-full bg-slate-100 rounded-xl p-3 text-sm" placeholder="Tên danh mục">', [{label:'Hủy', class:'flex-1 py-3 font-bold text-slate-500 bg-slate-100 rounded-xl', onClick:closeDialog},{label:'Lưu', class:'bg-indigo-600 text-white rounded-xl py-3 flex-1 font-bold', onClick:() => { const n = document.getElementById('catName').value.trim(); if(n){ const g = state.expenseGroups.find(x=>x.id===gId); if(g && !g.categories.includes(n)) g.categories.push(n); saveState(); renderSettings(); closeDialog(); }}}])}
+        function openAddGroupModal() { openDialog('Nhóm mới', '<input id="groupName" class="w-full bg-slate-100 rounded-xl p-3 text-sm" placeholder="Tên nhóm">', [{label:'Hủy', class:'flex-1 py-3 font-bold text-slate-500 bg-slate-100 rounded-xl', onClick:closeDialog},{label:'Tạo', class:'bg-indigo-600 text-white rounded-xl py-3 flex-1 font-bold', onClick:() => { const n = document.getElementById('groupName').value.trim(); if(n){ state.expenseGroups.push({id:'g'+Date.now(), name:n, color:'#'+Math.floor(Math.random()*16777215).toString(16), categories:[]}); saveState(); renderSettings(); closeDialog(); }}}])}
 
         function exportData() {
             const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
@@ -889,7 +948,6 @@
             const rawAmount = document.getElementById('amountInput').value;
             const amount = parseFloat(rawAmount);
             
-            // Logic mới: Chấp nhận số âm, chỉ chặn 0 hoặc NaN
             if (isNaN(amount) || amount === 0) {
                 openDialog('Lỗi', 'Vui lòng nhập số tiền hợp lệ (khác 0).');
                 return;
@@ -903,11 +961,13 @@
             state.transactions.push({ id: 't'+Date.now(), type, amount, category, note, date });
             saveState();
             
-            // Reset form
             document.getElementById('amountDisplayInput').value = '';
             document.getElementById('amountInput').value = '';
             document.getElementById('noteInput').value = '';
-            openDialog('Đã lưu', '<p class="text-xs text-center">Ghi chép thành công.</p>');
+            
+            openDialog('Thành công', '<p class="text-sm text-center text-slate-600">Đã lưu giao dịch mới</p>', [
+                { label: 'Đóng', class: 'w-full py-3 bg-indigo-600 text-white font-bold rounded-xl', onClick: closeDialog }
+            ]);
         });
 
         document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
@@ -915,9 +975,3 @@
     </script>
 </body>
 </html>
-
-
-
-
-
-
